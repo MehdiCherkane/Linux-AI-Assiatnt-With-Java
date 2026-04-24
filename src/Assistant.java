@@ -4,6 +4,7 @@ public class Assistant {
 
     public static void main(String[] args) {
         // get user prompt (CLI now)  
+        System.out.println("this a test");
         Memory memory = new Memory();
         Interface userInterface = new Interface();
         IntentRunner runner = new IntentRunner();
