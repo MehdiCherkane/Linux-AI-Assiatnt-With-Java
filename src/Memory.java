@@ -14,7 +14,17 @@ public class Memory {
         catch(IOException ioe){
             ioe.printStackTrace();
         }
-    } 
+    }
+
+    public void updateShortTermMemory(String message, String response){
+        try{
+            Files.write(this.pathToShortMemory, ("[-Mehdi: " + message + " -Jarvis said: " + response + "]\n").getBytes(),
+             StandardOpenOption.APPEND);
+        }
+        catch(IOException ioe){
+            ioe.printStackTrace();
+        }
+    }
 
     public void updateLongTermMemory(String memory){
         try{

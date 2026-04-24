@@ -1,3 +1,5 @@
 /.vscode
-/.class
+*.class
+*.jar
+target/
 /README.md

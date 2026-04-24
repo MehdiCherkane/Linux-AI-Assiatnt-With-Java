@@ -4,19 +4,30 @@ public class IntentRunner {
     private Memory memory = new Memory();
     private Runner runner = new Runner();
     private IntentParser parser = new IntentParser();
+    private Interface userInterface = new Interface();
+    private SafetyCheck safetyCheck = new SafetyCheck();
 
 
     public void run(String response){
 
         List<Intent> intents = parser.parseIntents(response);
-        for (Intent intent : intents) {
-            System.out.println("Entent: %s -->  Content: %s".formatted(intent.getIntentType(), intent.getIntentRsponse()));
-        }
+
         //loop and excute each intent
         for (Intent intent : intents) {
             
             if(intent.getIntentType().equals("SHELL: ")){
-                runner.excute(intent.getIntentRsponse());
+                if (safetyCheck.isSafe(intent.getIntentRsponse())) {
+                    userInterface.sendOutput("Command to excute: " + intent.getIntentRsponse());
+                    runner.excute(intent.getIntentRsponse());
+                } else {
+                    userInterface.sendOutput("Command to excute: " + intent.getIntentRsponse());
+                    boolean userConfirmation = userInterface.validateComand(intent.getIntentRsponse());
+                    if (userConfirmation) {
+                        runner.excute(intent.getIntentRsponse());
+                    } else {
+                        userInterface.sendOutput("Command execution cancelled by the user.");
+                    }
+                }
             }
     
             else if (intent.getIntentType().equals("YOUTUBE: ")) {
@@ -24,12 +35,6 @@ public class IntentRunner {
                 String url = "https://www.youtube.com/results?search_query=" 
                      + query.replace(" ", "+");
                       runner.excute("brave \"" + url + "\"");
-            }
-
-            else if (intent.getIntentType().equals("CONTEXT: ")) {
-                String newMemory = intent.getIntentRsponse();
-                memory.updateShorTermMemory(newMemory);
-
             }
 
             else if (intent.getIntentType().equals("REM: ")) {
@@ -40,20 +45,22 @@ public class IntentRunner {
 
             else if (intent.getIntentType().equals("CHAT: ")) {
                 String chatRespnse = intent.getIntentRsponse();
-                System.out.println(chatRespnse);
+                userInterface.sendOutput(chatRespnse);
             }
             else if (intent.getIntentType().startsWith("CODE")) {
                 String code = intent.getIntentRsponse();
-                System.err.println("++++++++++ Start Code +++++++");
-                System.out.println(code);
-                System.out.println("++++++++++ End Code +++++++++");
+                userInterface.sendOutput("++++++++++ Start Code +++++++");
+                userInterface.sendOutput(code);
+                userInterface.sendOutput("++++++++++ End Code +++++++++");
             }
 
             else if (intent.getIntentType().equals("INVALID")) {
-                System.out.println("Nope");
+                userInterface.sendOutput("I can't do that Boss, Sorry :(");
             }
             else if (intent.getIntentType().equals("EXIT: ")) {
-                System.err.println("Okay");
+                memory.clearShortMemoery();
+                userInterface.sendOutput("Goodbye!");
+                System.exit(0);
             }
         }
     }
