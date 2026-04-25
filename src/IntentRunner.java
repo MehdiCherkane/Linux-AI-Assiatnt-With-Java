@@ -6,6 +6,7 @@ public class IntentRunner {
     private IntentParser parser = new IntentParser();
     private Interface userInterface = new Interface();
     private SafetyCheck safetyCheck = new SafetyCheck();
+    private CodeHandler codeHandler = new CodeHandler(userInterface);
 
 
     public void run(String response){
@@ -47,11 +48,15 @@ public class IntentRunner {
                 String chatRespnse = intent.getIntentRsponse();
                 userInterface.sendOutput(chatRespnse);
             }
-            else if (intent.getIntentType().startsWith("CODE")) {
-                String code = intent.getIntentRsponse();
-                userInterface.sendOutput("++++++++++ Start Code +++++++");
-                userInterface.sendOutput(code);
-                userInterface.sendOutput("++++++++++ End Code +++++++++");
+            // handle code.
+            else if (intent.getIntentType().equals("CODE: ")) {
+                String filePath = codeHandler.handleCode(intent.getIntentRsponse());
+
+                // just to open vscode with the file, I can chane it later.
+                if (filePath != null) {
+                    runner.excute("code "+ filePath);
+                }
+
             }
 
             else if (intent.getIntentType().equals("INVALID")) {
