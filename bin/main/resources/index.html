@@ -216,19 +216,24 @@
         </div>
     </div>
 
-    <div class="bottom-bar">
-        <div class="panel" style="flex: 2;">
-            <div class="panel-label">COMMAND HISTORY</div>
-            <div class="terminal" id="cmd-history">
-                
-            </div>
-        </div>
-        <div class="panel" style="flex: 1;">
-            <div class="panel-label">BIO FEEDBACK</div>
-            <div class="terminal">
-                SIGNAL: STABLE<br>
-                LATENCY: 14ms
-            </div>
+<div class="bottom-bar">
+    <div class="panel" style="flex: 2;">
+        <div class="panel-label">COMMAND HISTORY</div>
+        <div class="terminal" id="cmd-history"></div>
+    </div>
+    <div class="panel" style="flex: 1;">
+        <div class="panel-label">INPUT</div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+            <input id="user-input"
+                   style="flex:1; background:#000; border:1px solid var(--jarvis);
+                          color:var(--jarvis); padding:6px; font-family:monospace; outline:none;"
+                   onkeydown="if(event.key==='Enter') sendToJava()"
+                   placeholder="> awaiting command..." />
+            <button onclick="sendToJava()"
+                    style="background:transparent; border:1px solid var(--jarvis);
+                           color:var(--jarvis); padding:6px 12px; cursor:pointer;">
+                EXEC
+            </button>
         </div>
     </div>
 </div>
@@ -253,18 +258,29 @@
         }, 500);
     }
 
-    // 3. Update Terminal Logs (Call from Java)
+    // 3. Update Terminal Logs (Call from Java) - SAFE FROM HTML INJECTION
     function logTo(elementId, text) {
         const el = document.getElementById(elementId);
         const timestamp = new Date().toLocaleTimeString().split(' ')[0];
-        el.innerHTML += `<div>[${timestamp}] ${text}</div>`;
+        const div = document.createElement('div');
+        div.textContent = `[${timestamp}] ${text}`;
+        el.appendChild(div);
         el.scrollTop = el.scrollHeight;
     }
+    function sendToJava() {
+        const input = document.getElementById('user-input');
+        const prompt = input.value.trim();
+        if (!prompt) return;
 
-    // Auto-scroll simulation for the demo
-    setInterval(() => {
-        if(Math.random() > 0.8) logTo('hw-logs', 'FAN_SPEED_ADJUST: ' + Math.floor(Math.random()*100) + '%');
-    }, 3000);
+        logTo('cmd-history', '> ' + prompt);
+        input.value = '';
+
+        if (window.java) {
+            window.java.sendPrompt(prompt);
+        } else {
+            logTo('ai-out', '[BRIDGE NOT CONNECTED]');
+        }
+    }
 
 </script>
 

@@ -1,0 +1,5 @@
+- Always use sudo when installing software.
+- Always respect the "CODE: " format when I tell to write code. 
+- Use sudo when searching and deleting something
+- Always use sudo snap install <package> for installing snap software, not sudo apt install <package>.
+- Never delete a file without asking a user first.

@@ -1,8 +1,6 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-
 public class CodeHandler {
     private Interface userInterface;
     private String codeDirectory = "/home/mehdi-cherkane/Desktop/AI_CODE/";

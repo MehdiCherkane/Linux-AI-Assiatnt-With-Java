@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +8,7 @@ import java.util.List;
 public class Runner {
     // I use this method in case of not using bash.
     private List<String> tokenize(String command) {
-        command = "bash -c " + command;
+
         List<String> tokens = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
@@ -46,6 +48,8 @@ public class Runner {
             || command.endsWith("'")))) {
             tokens.add(current.toString());
         }
+        // hhh not gonna build the shell from scratch or anything.
+
         tokens.replaceAll(token -> {
             if (token.startsWith("~/")) {
                 return System.getProperty("user.home") + token.substring(1);
@@ -55,18 +59,32 @@ public class Runner {
         return tokens;
     }
 
-    public String excute(String comand){
+    public ProcessResult excute(String comand){
         try{
+
             ProcessBuilder pb = new ProcessBuilder("bash", "-c", comand);
-            pb.inheritIO();
             Process process = pb.start();
+
+            String stdout = readStream(process.getInputStream());
+            String stderr = readStream(process.getErrorStream());
             int exitCode = process.waitFor();
-            return "Finished with exit code: " + exitCode;
+
+            return new ProcessResult(exitCode, stdout, stderr);
         }
         catch(Exception e){
             e.printStackTrace();
-            return "error occured";
+            return new ProcessResult(-1, "", e.getMessage());
         }
+    }
 
+    private String readStream(InputStream inputStream) throws IOException {
+        try (BufferedReader reader = new java.io.BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append(System.lineSeparator());
+            }
+            return output.toString().trim();
+        }
     }
 }

@@ -1,1 +1,0 @@
-- Always use sudo when installing software.
