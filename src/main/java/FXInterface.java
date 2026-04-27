@@ -5,6 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -17,6 +18,9 @@ import java.util.concurrent.CountDownLatch;
 
 public class FXInterface extends Interface {
     private final TextArea outputArea;
+    private Stage interactiveDialog;
+    private TextField interactiveInput;
+    private Runner activeRunner;   // used to send input/kill
 
     public FXInterface(TextArea outputArea) {
         this.outputArea = outputArea;
@@ -167,6 +171,65 @@ public class FXInterface extends Interface {
             "-fx-cursor: hand;"
         ));
         return b;
+    }
+
+    // ========== Interactive process support ==========
+    
+    @Override
+    public void startInteractive(String command, Runner runner) {
+        this.activeRunner = runner;
+        Platform.runLater(() -> {
+            if (interactiveDialog == null) {
+                interactiveDialog = new Stage();
+                interactiveDialog.initModality(Modality.NONE);
+                interactiveDialog.setTitle("Interactive Session");
+                interactiveDialog.setResizable(true);
+                interactiveDialog.initStyle(StageStyle.UTILITY);
+                VBox vbox = new VBox(15);
+                vbox.setPadding(new Insets(20));
+                vbox.setStyle("-fx-background-color: #020b10; -fx-border-color: #00f2ff; -fx-border-width: 1;");
+
+                Label cmdLabel = new Label("Command: " + command);
+                cmdLabel.setTextFill(Color.web("#00f2ff"));
+                cmdLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 12px;");
+
+                interactiveInput = new TextField();
+                interactiveInput.setPromptText("Type input and press Enter");
+                interactiveInput.setStyle("-fx-background-color: black; -fx-text-fill: #00f2ff; -fx-border-color: #00f2ff;");
+                interactiveInput.setOnAction(e -> {
+                    String input = interactiveInput.getText();
+                    if (activeRunner != null && !input.isEmpty()) {
+                        activeRunner.sendInput(input);
+                        interactiveInput.clear();
+                    }
+                });
+
+                Button killBtn = new Button("Kill Process");
+                killBtn.setStyle("-fx-background-color: #ff5555; -fx-text-fill: white; -fx-font-weight: bold;");
+                killBtn.setOnAction(e -> {
+                    if (activeRunner != null) activeRunner.killActiveProcess();
+                    interactiveDialog.close();
+                });
+
+                vbox.getChildren().addAll(cmdLabel, interactiveInput, killBtn);
+                Scene scene = new Scene(vbox, 800, 400);
+                scene.setFill(Color.TRANSPARENT);
+                interactiveDialog.setScene(scene);
+            }
+            interactiveDialog.show();
+            interactiveInput.requestFocus();
+        });
+    }
+
+    @Override
+    public void endInteractive() {
+        Platform.runLater(() -> {
+            if (interactiveDialog != null) {
+                interactiveDialog.close();
+                interactiveDialog = null;
+            }
+            activeRunner = null;
+        });
     }
 
     @Override

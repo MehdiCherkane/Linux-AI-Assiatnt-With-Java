@@ -24,60 +24,77 @@ public class IntentRunner {
 
         //loop and excute each intent
         for (Intent intent : intents) {
-            
-            if(intent.getIntentType().equals("SHELL: ")){
-                if (safetyCheck.isSafe(intent.getIntentRsponse())) {
-                    userInterface.sendOutput("Command to execute: " + intent.getIntentRsponse());
-                    ProcessResult result = runner.excute(intent.getIntentRsponse());
-                    userInterface.sendOutput("Exit code: " + result.getExitCode());
-                    if (!result.getStdout().isBlank()) {
-                        userInterface.sendOutput(result.getStdout());
-                    }
-                    if (!result.getStderr().isBlank()) {
-                        userInterface.sendOutput("Error output: " + result.getStderr());
-                    }
+            // this hanles the shell command intent, it will check if the command is interactive or not and execute it accordingly.
+            if (intent.getIntentType().equals("SHELL: ")) {
+                String command = intent.getIntentRsponse();
+                if (safetyCheck.isInteractive(command)) {
+                    // Launch interactive session
+                    userInterface.startInteractive(command, runner);
+                    runner.executeInteractive(command, new ProcessHandler() {
+                        @Override
+                        public void onOutput(String line) {
+                            userInterface.sendOutput("[stdout] " + line);
+                        }
+                        @Override
+                        public void onError(String line) {
+                            userInterface.sendOutput("[stderr] " + line);
+                        }
+                        @Override
+                        public void onExit(int exitCode) {
+                            userInterface.sendOutput("Interactive process finished with exit code " + exitCode);
+                            userInterface.endInteractive();
+                        }
+                    });
                 } else {
-                    userInterface.sendOutput("Command to execute: " + intent.getIntentRsponse());
-                    boolean userConfirmation = userInterface.validateComand(intent.getIntentRsponse());
-                    if (userConfirmation) {
-                        ProcessResult result = runner.excute(intent.getIntentRsponse());
+                    // Original non‑interactive flow (with safety check)
+                    if (safetyCheck.isSafe(command)) {
+                        userInterface.sendOutput("Command to execute: " + command);
+                        ProcessResult result = runner.execute(command);
                         userInterface.sendOutput("Exit code: " + result.getExitCode());
-                        if (!result.getStdout().isBlank()) {
-                            userInterface.sendOutput(result.getStdout());
-                        }
-                        if (!result.getStderr().isBlank()) {
-                            userInterface.sendOutput("Error output: " + result.getStderr());
-                        }
+                        if (!result.getStdout().isBlank()) userInterface.sendOutput(result.getStdout());
+                        if (!result.getStderr().isBlank()) userInterface.sendOutput("Error output: " + result.getStderr());
                     } else {
-                        userInterface.sendOutput("Command execution cancelled by the user.");
+                        userInterface.sendOutput("Command to execute: " + command);
+                        boolean userConfirmation = userInterface.validateComand(command);
+                        if (userConfirmation) {
+                            ProcessResult result = runner.execute(command);
+                            userInterface.sendOutput("Exit code: " + result.getExitCode());
+                            if (!result.getStdout().isBlank()) userInterface.sendOutput(result.getStdout());
+                            if (!result.getStderr().isBlank()) userInterface.sendOutput("Error output: " + result.getStderr());
+                        } else {
+                            userInterface.sendOutput("Command execution cancelled by the user.");
+                        }
                     }
                 }
             }
-    
+
+            // this handles the youtube intent, it will open the youtube search results for the given query in the default browser.
             else if (intent.getIntentType().equals("YOUTUBE: ")) {
                 String query = intent.getIntentRsponse();
                 String url = "https://www.youtube.com/results?search_query=" 
                      + query.replace(" ", "+");
-                ProcessResult result = runner.excute("brave \"" + url + "\"");
+                ProcessResult result = runner.execute("brave \"" + url + "\"");
                 userInterface.sendOutput("Browser command finished with exit code: " + result.getExitCode());
             }
 
+            // this handles the REM intent, it will update the long term memory with the given information.
             else if (intent.getIntentType().equals("REM: ")) {
                 String newMemory = intent.getIntentRsponse();
                 memory.updateLongTermMemory(newMemory);
 
             }
-
+            // this handles the CHAT intent, it will just send the response to the user interface to be displayed to the user.
             else if (intent.getIntentType().equals("CHAT: ")) {
                 String chatRespnse = intent.getIntentRsponse();
                 userInterface.sendOutput(chatRespnse);
             }
+
             // handle code.
             else if (intent.getIntentType().equals("CODE: ")) {
                 String filePath = codeHandler.handleCode(intent.getIntentRsponse());
 
                 if (filePath != null) {
-                    ProcessResult result = runner.excute("code \"" + filePath + "\"");
+                    ProcessResult result = runner.execute("code \"" + filePath + "\"");
                     userInterface.sendOutput("VS Code launch exit code: " + result.getExitCode());
                     if (!result.getStderr().isBlank()) {
                         userInterface.sendOutput("Code launch error: " + result.getStderr());
@@ -86,6 +103,7 @@ public class IntentRunner {
 
             }
 
+            // handle invalid intent.
             else if (intent.getIntentType().equals("INVALID")) {
                 userInterface.sendOutput("I can't do that Boss, Sorry :(");
             }

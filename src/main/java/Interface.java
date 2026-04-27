@@ -4,7 +4,8 @@ import java.util.Scanner;
 public class Interface {
     private String prompt;
     private Scanner sc = new Scanner(System.in);
-
+    
+    // those method are just for the CLI
     public String getPrompt(){
             System.out.println("How can I serve you sir?");
             System.out.print("---> ");
@@ -25,8 +26,17 @@ public class Interface {
             }
         }
     }
-    // //this method is used to send the output to the user
+    // this method is used to send the output to the user (CLI)
+
     public void sendOutput(String output){
         System.out.println(output);
     }
+    public void endInteractive(){
+        System.out.println("Goodbye sir, have a nice day!");
+    }
+    public void startInteractive(String command, Runner runner){
+        // for CLI.
+        System.out.println("Interactive mode started. ");
+    }
+
 }
