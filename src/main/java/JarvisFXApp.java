@@ -28,6 +28,10 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class JarvisFXApp extends Application {
+
+    private Timeline voiceRotateTimeline;
+    private double originalRing1StrokeWidth = 1;
+    private double originalRing1Radius = 200;
     private TextArea outputArea;
     private TextArea historyArea;
     private TextField inputField;
@@ -36,7 +40,9 @@ public class JarvisFXApp extends Application {
     private Circle ring1, ring2, ring3;
     private Timeline clockTimeline;
     private Timeline ring1Timeline, ring2Timeline, ring3Timeline;
+    private Timeline voicePulseTimeline;
     private ProgressBar progressBar;
+    private Button micBtn;
 
     private Messanger messanger;
     private IntentRunner intentRunner;
@@ -62,6 +68,12 @@ public class JarvisFXApp extends Application {
             memory.clearShortMemory();
             stopAnimations();
         });
+        scene.setOnKeyPressed(e -> {
+        
+        if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.M) {
+            startVoiceRecording(micBtn);
+        }
+    });
         stage.show();
 
         fxInterface.sendOutput("[SYSTEM] Ready Boss");
@@ -130,6 +142,7 @@ public class JarvisFXApp extends Application {
         rightPanel.getChildren().add(outputArea);
         VBox.setVgrow(outputArea, Priority.ALWAYS);
         grid.add(rightPanel, 2, 1);
+    
 
         HBox bottomBar = createBottomBar();
         grid.add(bottomBar, 0, 2, 3, 1);
@@ -270,9 +283,7 @@ public class JarvisFXApp extends Application {
         VBox.setVgrow(historyArea, Priority.ALWAYS);
 
         VBox inputPanel = createPanel("INPUT");
-        // inputPanel.setPrefWidth(300);
 
-        // ── Modern input field ──
         inputField = new TextField();
         inputField.setPromptText("Awaiting command...");
         inputField.setPrefWidth(350);
@@ -299,7 +310,7 @@ public class JarvisFXApp extends Application {
         );
         inputField.setOnAction(e -> sendPrompt());
 
-        // ── Modern EXEC button ──
+        // ── EXEC button ──
         Button sendBtn = new Button("FIRE");
         String btnBase =
             "-fx-background-color: #00f2ff;" +
@@ -320,7 +331,28 @@ public class JarvisFXApp extends Application {
         sendBtn.setOnMouseExited(e -> sendBtn.setStyle(btnBase));
         sendBtn.setOnAction(e -> sendPrompt());
 
-        HBox inputBox = new HBox(8, inputField, sendBtn);
+        // ── MIC button ──
+        Button micBtn = new Button("SPEAK");
+        String micBase =
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #00f2ff;" +
+            "-fx-border-color: #00f2ff;" +
+            "-fx-border-width: 1.5;" +
+            "-fx-border-radius: 6;" +
+            "-fx-background-radius: 6;" +
+            "-fx-padding: 10 14;" +
+            "-fx-font-size: 16px;" +
+            "-fx-cursor: hand;";
+        String micHover = micBase +
+            "-fx-background-color: #00f2ff;" +
+            "-fx-text-fill: #000;";
+
+        micBtn.setStyle(micBase);
+        micBtn.setOnMouseEntered(e -> micBtn.setStyle(micHover));
+        micBtn.setOnMouseExited(e -> micBtn.setStyle(micBase));
+        micBtn.setOnAction(e -> startVoiceRecording(micBtn));
+
+        HBox inputBox = new HBox(8, inputField, sendBtn, micBtn);
         HBox.setHgrow(inputField, Priority.ALWAYS);
         inputBox.setAlignment(Pos.CENTER);
         inputBox.setPadding(new Insets(8, 0, 0, 0));
@@ -330,6 +362,169 @@ public class JarvisFXApp extends Application {
         HBox.setHgrow(histPanel, Priority.ALWAYS);
         HBox.setHgrow(inputPanel, Priority.ALWAYS);
         return bar;
+    }
+    private void startVoiceRecording(Button micBtn) {
+        // ── Visual feedback: mic button turns red ──
+        micBtn.setStyle(
+            "-fx-background-color: #ff5555;" +
+            "-fx-text-fill: white;" +
+            "-fx-border-color: #ff5555;" +
+            "-fx-border-width: 1.5;" +
+            "-fx-border-radius: 6;" +
+            "-fx-background-radius: 6;" +
+            "-fx-padding: 10 14;" +
+            "-fx-font-size: 16px;" +
+            "-fx-cursor: hand;"
+        );
+        statusLabel.setText("LISTENING...");
+
+        // ── 1. PULSE: Grow and STAY expanded ──
+        // Animate from idle size to expanded, then hold
+        voicePulseTimeline = new Timeline(
+            new KeyFrame(Duration.ZERO,
+                new KeyValue(ring1.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring1.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring2.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring2.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring3.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring3.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_OUT)
+            ),
+            new KeyFrame(Duration.millis(600),
+                new KeyValue(ring1.scaleXProperty(), 1.25, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring1.scaleYProperty(), 1.25, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring2.scaleXProperty(), 1.18, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring2.scaleYProperty(), 1.18, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring3.scaleXProperty(), 1.12, javafx.animation.Interpolator.EASE_OUT),
+                new KeyValue(ring3.scaleYProperty(), 1.12, javafx.animation.Interpolator.EASE_OUT)
+            )
+            // NO final KeyFrame — it stays at 1.25x / 1.18x / 1.12x
+        );
+        voicePulseTimeline.play();
+
+        // ── 2. OUTER RING: Rotate faster + get thicker ──
+        // Stop the slow idle rotation
+        if (ring1Timeline != null) ring1Timeline.stop();
+
+        // Thicken the outer ring
+        ring1.setStrokeWidth(4); // was 1, now 4px thick
+
+        // Fast continuous rotation
+        voiceRotateTimeline = new Timeline(
+            new KeyFrame(Duration.ZERO,
+                new KeyValue(ring1.rotateProperty(), ring1.getRotate(), javafx.animation.Interpolator.LINEAR)),
+            new KeyFrame(Duration.seconds(2), // 2 seconds per full rotation = fast
+                new KeyValue(ring1.rotateProperty(), ring1.getRotate() + 360, javafx.animation.Interpolator.LINEAR))
+        );
+        voiceRotateTimeline.setCycleCount(Timeline.INDEFINITE);
+        voiceRotateTimeline.play();
+
+        // ── 3. Optional: Cyan-to-red color shift on outer ring ──
+        ring1.setStroke(Color.web("#00f2ff")); // Red while recording
+
+        // ── Start voice recording in background ──
+        Task<String> voiceTask = new Task<>() {
+            @Override
+            protected String call() {
+                return VoiceHandler.recordAndTranscribe();
+            }
+
+            @Override
+            protected void succeeded() {
+                String transcript = getValue();
+                stopVoiceAnimation(micBtn);
+
+                if (transcript != null && !transcript.isEmpty()) {
+                    inputField.setText(transcript);
+                    sendPrompt();
+                } else {
+                    fxInterface.sendOutput("[SYSTEM] No speech detected.");
+                }
+            }
+
+            @Override
+            protected void failed() {
+                stopVoiceAnimation(micBtn);
+                fxInterface.sendOutput("[ERROR] Voice recording failed: " + getException().getMessage());
+            }
+
+            @Override
+            protected void cancelled() {
+                stopVoiceAnimation(micBtn);
+            }
+        };
+
+        Thread t = new Thread(voiceTask);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void stopVoiceAnimation(Button micBtn) {
+        // ── Smooth return to idle ──
+        Timeline returnToIdle = new Timeline(
+            new KeyFrame(Duration.ZERO,
+                new KeyValue(ring1.scaleXProperty(), ring1.getScaleX()),
+                new KeyValue(ring1.scaleYProperty(), ring1.getScaleY()),
+                new KeyValue(ring2.scaleXProperty(), ring2.getScaleX()),
+                new KeyValue(ring2.scaleYProperty(), ring2.getScaleY()),
+                new KeyValue(ring3.scaleXProperty(), ring3.getScaleX()),
+                new KeyValue(ring3.scaleYProperty(), ring3.getScaleY()),
+                new KeyValue(ring1.strokeWidthProperty(), ring1.getStrokeWidth()),
+                new KeyValue(ring1.rotateProperty(), ring1.getRotate())
+            ),
+            new KeyFrame(Duration.millis(500),
+                new KeyValue(ring1.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring1.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring2.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring2.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring3.scaleXProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring3.scaleYProperty(), 1.0, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring1.strokeWidthProperty(), originalRing1StrokeWidth, javafx.animation.Interpolator.EASE_IN),
+                new KeyValue(ring1.rotateProperty(), ring1.getRotate() + 90, javafx.animation.Interpolator.EASE_IN) // coast to stop
+            )
+        );
+        returnToIdle.setOnFinished(e -> {
+            // Restore idle rotation
+            if (voiceRotateTimeline != null) {
+                voiceRotateTimeline.stop();
+                voiceRotateTimeline = null;
+            }
+            if (voicePulseTimeline != null) {
+                voicePulseTimeline.stop();
+                voicePulseTimeline = null;
+            }
+            ring1.setStroke(Color.web("#00f2ff")); // Back to cyan
+            ring1.setStrokeWidth(originalRing1StrokeWidth);
+
+            // Restart slow idle rotation
+            ring1Timeline = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                    new KeyValue(ring1.rotateProperty(), ring1.getRotate(), javafx.animation.Interpolator.LINEAR)),
+                new KeyFrame(Duration.seconds(40),
+                    new KeyValue(ring1.rotateProperty(), ring1.getRotate() + 360, javafx.animation.Interpolator.LINEAR))
+            );
+            ring1Timeline.setCycleCount(Timeline.INDEFINITE);
+            ring1Timeline.play();
+        });
+        returnToIdle.play();
+
+        // Reset mic button
+        String micBase =
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #00f2ff;" +
+            "-fx-border-color: #00f2ff;" +
+            "-fx-border-width: 1.5;" +
+            "-fx-border-radius: 6;" +
+            "-fx-background-radius: 6;" +
+            "-fx-padding: 10 14;" +
+            "-fx-font-size: 16px;" +
+            "-fx-cursor: hand;";
+        micBtn.setStyle(micBase);
+        statusLabel.setText("SYSTEM IDLE");
+    }
+
+    // Keep this for backward compatibility if anything calls it
+    private void resetMicButton(Button micBtn) {
+        stopVoiceAnimation(micBtn);
     }
 
     private void sendPrompt() {

@@ -29,6 +29,7 @@ public class FXInterface extends Interface {
     @Override
     
     public void sendOutput(String output) {
+        
         if (output == null) return;
         if (Platform.isFxApplicationThread()) {
             append(output);
