@@ -24,12 +24,17 @@ public class IntentRunner {
 
         //loop and excute each intent
         for (Intent intent : intents) {
+
             // this hanles the shell command intent, it will check if the command is interactive or not and execute it accordingly.
             if (intent.getIntentType().equals("SHELL: ")) {
+
                 String command = intent.getIntentRsponse();
+
                 if (safetyCheck.isInteractive(command)) {
                     // Launch interactive session
+
                     userInterface.startInteractive(command, runner);
+
                     runner.executeInteractive(command, new ProcessHandler() {
                         @Override
                         public void onOutput(String line) {
@@ -44,9 +49,12 @@ public class IntentRunner {
                             userInterface.sendOutput("Interactive process finished with exit code " + exitCode);
                             userInterface.endInteractive();
                         }
+
                     });
+
                 } else {
                     // Original non‑interactive flow (with safety check)
+                    
                     if (safetyCheck.isSafe(command)) {
                         userInterface.sendOutput("Command to execute: " + command);
                         ProcessResult result = runner.execute(command);
@@ -89,7 +97,8 @@ public class IntentRunner {
                 userInterface.sendOutput(chatRespnse);
             }
 
-            // handle code.
+            // handle code.mysql> alter table Matieres modify VH int check (VH > 0 AND VH <= 50);
+
             else if (intent.getIntentType().equals("CODE: ")) {
                 String filePath = codeHandler.handleCode(intent.getIntentRsponse());
 

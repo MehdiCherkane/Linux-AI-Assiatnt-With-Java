@@ -26,8 +26,8 @@ public class Runner {
     // Interactive execution – non‑blocking
 
 
-
     public void executeInteractive(String command, ProcessHandler handler) {
+
         new Thread(() -> {
             try {
                 // Use PTY instead of ProcessBuilder
@@ -52,7 +52,9 @@ public class Runner {
                         while ((line = reader.readLine()) != null) {
                             handler.onOutput(line);
                         }
-                    } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                        handler.onOutput("Error occured while reading process I/O");
+                    }
                 });
                 outThread.setDaemon(true);
                 outThread.start();
@@ -63,7 +65,9 @@ public class Runner {
                         while ((line = reader.readLine()) != null) {
                             handler.onError(line);
                         }
-                    } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                        handler.onError("Error occured while reading process I/O");
+                    }
                 });
                 errThread.setDaemon(true);
                 errThread.start();

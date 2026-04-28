@@ -43,6 +43,12 @@
             <artifactId>pty4j</artifactId>
             <version>0.13.10</version>
         </dependency>
+        <!-- Vosk STT -->
+        <dependency>
+            <groupId>com.alphacephei</groupId>
+            <artifactId>vosk</artifactId>
+            <version>0.3.45</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -27,6 +27,7 @@ public class FXInterface extends Interface {
     }
 
     @Override
+    
     public void sendOutput(String output) {
         if (output == null) return;
         if (Platform.isFxApplicationThread()) {
@@ -100,6 +101,9 @@ public class FXInterface extends Interface {
         Label q = new Label("Authorize execution?");
         q.setTextFill(Color.web("#00f2ff"));
         q.setFont(Font.font("Segoe UI", 13));
+
+        // button to clear memory:
+        
 
         HBox btns = new HBox(14);
         btns.setAlignment(Pos.CENTER);
