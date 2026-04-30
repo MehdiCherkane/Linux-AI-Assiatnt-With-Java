@@ -522,11 +522,6 @@ public class JarvisFXApp extends Application {
         statusLabel.setText("SYSTEM IDLE");
     }
 
-    // Keep this for backward compatibility if anything calls it
-    private void resetMicButton(Button micBtn) {
-        stopVoiceAnimation(micBtn);
-    }
-
     private void sendPrompt() {
         String prompt = inputField.getText().trim();
         if (prompt.isEmpty()) return;

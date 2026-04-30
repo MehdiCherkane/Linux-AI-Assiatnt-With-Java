@@ -329,4 +329,181 @@ public class VoiceHandler {
     return sb.toString();
 
     }
+
+    // now the speaking part:
+    public static boolean speak(String text) {
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            System.err.println("API key not set.");
+            return false;
+        }
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            // ── Step 1: Request TTS from AssemblyAI ──
+            byte[] audioBytes = requestTTS(text);
+            if (audioBytes == null || audioBytes.length == 0) {
+                System.err.println("TTS returned empty audio.");
+                return false;
+            }
+
+            // ── Step 2: Play the audio ──
+            playAudio(audioBytes);
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("TTS failed: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static byte[] requestTTS(String text) throws Exception {
+        URL url = new URL("https://api.assemblyai.com/v2/stream");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", API_KEY);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(READ_TIMEOUT_MS);
+        conn.setDoOutput(true);
+
+        // AssemblyAI streaming TTS request
+        String jsonBody = "{" +
+            "\"text\": \"" + escapeJson(text) + "\"," +
+            "\"voice\": \"default\"" +
+        "}";
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int status = conn.getResponseCode();
+        InputStream is = (status >= 200 && status < 300) 
+            ? conn.getInputStream() 
+            : conn.getErrorStream();
+        
+        if (is == null) {
+            throw new IOException("No response stream, status: " + status);
+        }
+
+        // Read all audio bytes
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int n;
+        while ((n = is.read(buffer)) != -1) {
+            baos.write(buffer, 0, n);
+        }
+        is.close();
+        conn.disconnect();
+
+        return baos.toByteArray();
+    }
+
+    /**
+     * Plays raw audio bytes through the default speakers.
+     */
+     private static void playAudio(byte[] audioBytes) throws Exception {
+        // Try JavaFX first (only works if toolkit is initialized)
+        try {
+            if (isJavaFXToolkitRunning()) {
+                playWithJavaFX(audioBytes);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback: Save to temp file and use system command
+        playWithSystemPlayer(audioBytes);
+    }
+
+    private static boolean isJavaFXToolkitRunning() {
+        try {
+            javafx.application.Platform.runLater(() -> {});
+            return true;
+        } catch (IllegalStateException e) {
+            return false;
+        }
+    }
+
+    private static void playWithJavaFX(byte[] audioBytes) {
+        // Save to temp file first (Media needs a URI)
+        try {
+            File tempFile = File.createTempFile("tts_", ".mp3");
+            tempFile.deleteOnExit();
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(audioBytes);
+            }
+
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.media.Media media = 
+                    new javafx.scene.media.Media(tempFile.toURI().toString());
+                javafx.scene.media.MediaPlayer player = 
+                    new javafx.scene.media.MediaPlayer(media);
+                player.setOnEndOfMedia(() -> {
+                    player.dispose();
+                    tempFile.delete();
+                });
+                player.play();
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Fallback: Save MP3 to temp file and play with system player.
+     * Works on any Java app without JavaFX.
+     */
+    private static void playWithSystemPlayer(byte[] audioBytes) throws Exception {
+        File tempFile = File.createTempFile("tts_", ".mp3");
+        tempFile.deleteOnExit();
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            fos.write(audioBytes);
+        }
+
+        String os = System.getProperty("os.name").toLowerCase();
+        ProcessBuilder pb;
+
+        if (os.contains("linux")) {
+            // Try multiple Linux players
+            String[] players = {"cvlc"};
+            String foundPlayer = null;
+            for (String player : players) {
+                if (isCommandAvailable(player)) {
+                    foundPlayer = player;
+                    break;
+                }
+            }
+            if (foundPlayer == null) {
+                throw new IOException("No audio player found. Install mpv or vlc.");
+            }
+            if (foundPlayer.equals("ffplay")) {
+                pb = new ProcessBuilder(foundPlayer, "-nodisp", "-autoexit", tempFile.getAbsolutePath());
+            } else {
+                pb = new ProcessBuilder(foundPlayer, tempFile.getAbsolutePath());
+            }
+        } else if (os.contains("mac")) {
+            pb = new ProcessBuilder("afplay", tempFile.getAbsolutePath());
+        } else if (os.contains("win")) {
+            pb = new ProcessBuilder("cmd", "/c", "start", tempFile.getAbsolutePath());
+        } else {
+            throw new IOException("Unsupported OS: " + os);
+        }
+
+        pb.inheritIO();
+        Process process = pb.start();
+        process.waitFor();
+        tempFile.delete();
+    }
+
+    private static boolean isCommandAvailable(String cmd) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("which", cmd);
+            Process p = pb.start();
+            return p.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

@@ -44,7 +44,7 @@ public class Runner {
                     activeStdin = process.getOutputStream();
                 }
 
-                // The rest is identical to your existing code:
+    
                 // read stdout, stderr, waitFor, etc.
                 Thread outThread = new Thread(() -> {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {

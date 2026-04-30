@@ -46,12 +46,13 @@ public class FXInterface extends Interface {
     @Override
     public boolean validateComand(String command) {
         if (Platform.isFxApplicationThread()) {
-            return showJarvisDialog(command);
+            return showNeuonDialog(command);
         }
+        
         final boolean[] result = {false};
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
-            result[0] = showJarvisDialog(command);
+            result[0] = showNeuonDialog(command);
             latch.countDown();
         });
         try {
@@ -63,7 +64,7 @@ public class FXInterface extends Interface {
         return result[0];
     }
 
-    private boolean showJarvisDialog(String command) {
+    private boolean showNeuonDialog(String command) {
         Stage dialog = new Stage();
         dialog.initStyle(StageStyle.UNDECORATED);
         dialog.initModality(Modality.APPLICATION_MODAL);
