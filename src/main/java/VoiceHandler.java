@@ -22,7 +22,7 @@ public class VoiceHandler {
      */
 
     public static String recordAndTranscribe() {
-        
+
         // Check for API key presence before doing anything else.
         if (API_KEY == null || API_KEY.isEmpty()) {
             System.err.println("ASSEMBLYAI_API_KEY environment variable not set.");
@@ -47,7 +47,7 @@ public class VoiceHandler {
             boolean speechDetected = false;
             long recordingStart = System.currentTimeMillis();
             long safetyDeadline = recordingStart + (MAX_RECORD_SECS * 1000L);
-            
+
             while (System.currentTimeMillis() < safetyDeadline) {
                 int n = mic.read(buffer, 0, buffer.length);
                 if (n <= 0) {
@@ -105,7 +105,7 @@ public class VoiceHandler {
                 System.err.println("Upload failed.");
                 return null;
             }
-   
+
 
             // Request transcription
             String transcriptId = requestTranscription(audioUploadUrl);
@@ -304,52 +304,60 @@ public class VoiceHandler {
     }
 
     // ── Escape a string for safe JSON inclusion ──────────────────────────────
- 
+
     private static String escapeJson(String s) {
-    if (s == null) return "";
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < s.length(); i++) {
-        char c = s.charAt(i);
-        switch (c) {
-            case '"':  sb.append("\\\""); break;
-            case '\\': sb.append("\\\\"); break;
-            case '\b': sb.append("\\b"); break;
-            case '\f': sb.append("\\f"); break;
-            case '\n': sb.append("\\n"); break;
-            case '\r': sb.append("\\r"); break;
-            case '\t': sb.append("\\t"); break;
-            default:
-                if (c < 0x20) {
-                    sb.append(String.format("\\u%04x", (int) c));
-                } else {
-                    sb.append(c);
-                }
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"':  sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
         }
-    }
-    return sb.toString();
+        return sb.toString();
 
     }
 
-    // now the speaking part:
+    // ═══════════════════════════════════════════════════════════════════════
+    // TEXT-TO-SPEECH (TTS)
+    // ═══════════════════════════════════════════════════════════════════════
+
     public static boolean speak(String text) {
         if (API_KEY == null || API_KEY.isEmpty()) {
             System.err.println("API key not set.");
             return false;
         }
+        
         if (text == null || text.trim().isEmpty()) {
             return false;
         }
 
         try {
-            // ── Step 1: Request TTS from AssemblyAI ──
-            byte[] audioBytes = requestTTS(text);
-            if (audioBytes == null || audioBytes.length == 0) {
+            // Step 1: Request TTS from AssemblyAI (returns raw PCM)
+            byte[] pcmBytes = requestTTS(text);
+            if (pcmBytes == null || pcmBytes.length == 0) {
                 System.err.println("TTS returned empty audio.");
                 return false;
             }
 
-            // ── Step 2: Play the audio ──
-            playAudio(audioBytes);
+            // Step 2: Wrap PCM in a WAV header so Java Sound API can play it
+            // AssemblyAI streaming TTS returns: 16-bit, 16kHz, mono PCM
+            byte[] wavBytes = toWav(pcmBytes, 16000, 1, 16);
+
+            // Step 3: Play using Java's built-in SourceDataLine (no external dependencies)
+            playWav(wavBytes);
             return true;
 
         } catch (Exception e) {
@@ -383,12 +391,12 @@ public class VoiceHandler {
         InputStream is = (status >= 200 && status < 300) 
             ? conn.getInputStream() 
             : conn.getErrorStream();
-        
+
         if (is == null) {
             throw new IOException("No response stream, status: " + status);
         }
 
-        // Read all audio bytes
+        // Read all audio bytes (raw PCM from AssemblyAI)
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         int n;
@@ -402,108 +410,28 @@ public class VoiceHandler {
     }
 
     /**
-     * Plays raw audio bytes through the default speakers.
+     * Plays a WAV file (with proper RIFF header) through the default speakers
+     * using Java's built-in javax.sound.sampled API. No external players needed.
      */
-     private static void playAudio(byte[] audioBytes) throws Exception {
-        // Try JavaFX first (only works if toolkit is initialized)
-        try {
-            if (isJavaFXToolkitRunning()) {
-                playWithJavaFX(audioBytes);
-                return;
-            }
-        } catch (Exception ignored) {}
+    private static void playWav(byte[] wavBytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(wavBytes);
+        AudioInputStream ais = AudioSystem.getAudioInputStream(bais);
 
-        // Fallback: Save to temp file and use system command
-        playWithSystemPlayer(audioBytes);
-    }
+        AudioFormat format = ais.getFormat();
+        DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
 
-    private static boolean isJavaFXToolkitRunning() {
-        try {
-            javafx.application.Platform.runLater(() -> {});
-            return true;
-        } catch (IllegalStateException e) {
-            return false;
-        }
-    }
+        try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
+            line.open(format);
+            line.start();
 
-    private static void playWithJavaFX(byte[] audioBytes) {
-        // Save to temp file first (Media needs a URI)
-        try {
-            File tempFile = File.createTempFile("tts_", ".mp3");
-            tempFile.deleteOnExit();
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(audioBytes);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = ais.read(buffer)) != -1) {
+                line.write(buffer, 0, bytesRead);
             }
 
-            javafx.application.Platform.runLater(() -> {
-                javafx.scene.media.Media media = 
-                    new javafx.scene.media.Media(tempFile.toURI().toString());
-                javafx.scene.media.MediaPlayer player = 
-                    new javafx.scene.media.MediaPlayer(media);
-                player.setOnEndOfMedia(() -> {
-                    player.dispose();
-                    tempFile.delete();
-                });
-                player.play();
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
+            line.drain(); // Wait for playback to finish
         }
-    }
-
-    /**
-     * Fallback: Save MP3 to temp file and play with system player.
-     * Works on any Java app without JavaFX.
-     */
-    private static void playWithSystemPlayer(byte[] audioBytes) throws Exception {
-        File tempFile = File.createTempFile("tts_", ".mp3");
-        tempFile.deleteOnExit();
-        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-            fos.write(audioBytes);
-        }
-
-        String os = System.getProperty("os.name").toLowerCase();
-        ProcessBuilder pb;
-
-        if (os.contains("linux")) {
-            // Try multiple Linux players
-            String[] players = {"cvlc"};
-            String foundPlayer = null;
-            for (String player : players) {
-                if (isCommandAvailable(player)) {
-                    foundPlayer = player;
-                    break;
-                }
-            }
-            if (foundPlayer == null) {
-                throw new IOException("No audio player found. Install mpv or vlc.");
-            }
-            if (foundPlayer.equals("ffplay")) {
-                pb = new ProcessBuilder(foundPlayer, "-nodisp", "-autoexit", tempFile.getAbsolutePath());
-            } else {
-                pb = new ProcessBuilder(foundPlayer, tempFile.getAbsolutePath());
-            }
-        } else if (os.contains("mac")) {
-            pb = new ProcessBuilder("afplay", tempFile.getAbsolutePath());
-        } else if (os.contains("win")) {
-            pb = new ProcessBuilder("cmd", "/c", "start", tempFile.getAbsolutePath());
-        } else {
-            throw new IOException("Unsupported OS: " + os);
-        }
-
-        pb.inheritIO();
-        Process process = pb.start();
-        process.waitFor();
-        tempFile.delete();
-    }
-
-    private static boolean isCommandAvailable(String cmd) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("which", cmd);
-            Process p = pb.start();
-            return p.waitFor() == 0;
-        } catch (Exception e) {
-            return false;
-        }
+        ais.close();
     }
 }
