@@ -7,30 +7,32 @@ import java.nio.charset.StandardCharsets;
 
 public class VoiceHandler {
 
-    static final String API_KEY          = "2676672cf7ac4f308609604a678b1ef5";
-    static final float  SAMPLE_RATE      = 16000f;
-    static final double ENERGY_THRESHOLD = 130000000; // above is speech, below is silence.
-    static final int    SILENCE_LIMIT_MS = 900;
-    static final int    MAX_RECORD_SECS  = 60;
+    // ── AssemblyAI (for Speech-to-Text) ──────────────────────────────────────
+    static final String ASSEMBLYAI_API_KEY = "2676672cf7ac4f308609604a678b1ef5";
+    static final float  SAMPLE_RATE        = 16000f;
+    static final double ENERGY_THRESHOLD   = 130000000;
+    static final int    SILENCE_LIMIT_MS   = 900;
+    static final int    MAX_RECORD_SECS    = 60;
     static final int    CONNECT_TIMEOUT_MS = 15000;
-    static final int    READ_TIMEOUT_MS    = 30000; 
+    static final int    READ_TIMEOUT_MS    = 30000;
     private static final Gson gson = new Gson();
+
+    // ── eidosSpeech (for Text-to-Speech) ────────────────────────────────────
+    static final String EIDOS_API_KEY = "esk_VzpOlJwR6lrvPqQkqYDioiLskRD7jQmL";
+    static final String EIDOS_VOICE   = "en-US-AndrewNeural"; // or en-US-AvaNeural
+    static final String EIDOS_ENDPOINT = "https://eidosspeech.xyz/api/v1/tts";
 
     /**
      * Records audio from the microphone, uploads to AssemblyAI, and returns
      * the transcribed text. Returns null if no speech was detected or an error occurred.
      */
-
     public static String recordAndTranscribe() {
-
-        // Check for API key presence before doing anything else.
-        if (API_KEY == null || API_KEY.isEmpty()) {
-            System.err.println("ASSEMBLYAI_API_KEY environment variable not set.");
+        if (ASSEMBLYAI_API_KEY == null || ASSEMBLYAI_API_KEY.isEmpty()) {
+            System.err.println("AssemblyAI API key not set.");
             return null;
         }
 
         TargetDataLine mic = null;
-
         try {
             AudioFormat format = new AudioFormat(SAMPLE_RATE, 16, 1, true, false);
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
@@ -38,7 +40,6 @@ public class VoiceHandler {
             mic.open(format);
             mic.start();
 
-            // TODO: this a stuts for the core.
             System.out.println("Listening... (speak, I'll stop when you go silent)");
 
             byte[] buffer = new byte[4096];
@@ -50,37 +51,25 @@ public class VoiceHandler {
 
             while (System.currentTimeMillis() < safetyDeadline) {
                 int n = mic.read(buffer, 0, buffer.length);
-                if (n <= 0) {
-                    break;
-                }
+                if (n <= 0) break;
                 audioData.write(buffer, 0, n);
 
-                // Calculate energy of this chunk
                 double energy = 0;
                 int samplesProcessed = n / 2;
                 for (int i = 0; i < samplesProcessed * 2; i += 2) {
                     short sample = (short) ((buffer[i + 1] << 8) | (buffer[i] & 0xFF));
                     energy += (double) sample * sample;
                 }
-                if (samplesProcessed > 0) {
-                    energy /= samplesProcessed;
-                }
+                if (samplesProcessed > 0) energy /= samplesProcessed;
 
-                // Decide: speech or silence
                 if (energy > ENERGY_THRESHOLD) {
                     speechDetected = true;
                     silenceSince = -1;
-
                 } else {
                     if (speechDetected) {
-                        if (silenceSince == -1) {
-                            silenceSince = System.currentTimeMillis();
-                        }
-
+                        if (silenceSince == -1) silenceSince = System.currentTimeMillis();
                         long silenceDuration = System.currentTimeMillis() - silenceSince;
-                        if (silenceDuration >= SILENCE_LIMIT_MS) {
-                            break;
-                        }
+                        if (silenceDuration >= SILENCE_LIMIT_MS) break;
                     }
                 }
             }
@@ -90,8 +79,6 @@ public class VoiceHandler {
             mic = null;
 
             if (!speechDetected) {
-                // TODO: maybe we can loop back and listen again instead of giving up immediately?
-
                 System.out.println("No speech detected.");
                 return null;
             }
@@ -99,23 +86,18 @@ public class VoiceHandler {
             byte[] rawPcm = audioData.toByteArray();
             byte[] wavBytes = toWav(rawPcm, (int) SAMPLE_RATE, 1, 16);
 
-            // Upload WAV
             String audioUploadUrl = uploadAudio(wavBytes);
             if (audioUploadUrl == null || audioUploadUrl.isEmpty()) {
                 System.err.println("Upload failed.");
                 return null;
             }
 
-
-            // Request transcription
             String transcriptId = requestTranscription(audioUploadUrl);
             if (transcriptId == null || transcriptId.isEmpty()) {
                 System.err.println("Transcription request failed.");
                 return null;
             }
-            // System.out.println("Polling for result...");
 
-            // Poll until done
             return pollForResult(transcriptId);
 
         } catch (Exception e) {
@@ -135,7 +117,7 @@ public class VoiceHandler {
         URL uploadUrl = new URL("https://api.assemblyai.com/v2/upload");
         HttpURLConnection uploadConn = (HttpURLConnection) uploadUrl.openConnection();
         uploadConn.setRequestMethod("POST");
-        uploadConn.setRequestProperty("Authorization", API_KEY);
+        uploadConn.setRequestProperty("Authorization", ASSEMBLYAI_API_KEY);
         uploadConn.setRequestProperty("Content-Type", "application/octet-stream");
         uploadConn.setConnectTimeout(CONNECT_TIMEOUT_MS);
         uploadConn.setReadTimeout(READ_TIMEOUT_MS);
@@ -151,12 +133,12 @@ public class VoiceHandler {
         return getAsString(uploadJson, "upload_url");
     }
 
-    // ── Request transcription ──────────────────────────────────────────────
+    // ── Request transcription ────────────────────────────────────────────────
     private static String requestTranscription(String audioUploadUrl) throws Exception {
         URL transcriptUrl = new URL("https://api.assemblyai.com/v2/transcript");
         HttpURLConnection transcriptConn = (HttpURLConnection) transcriptUrl.openConnection();
         transcriptConn.setRequestMethod("POST");
-        transcriptConn.setRequestProperty("Authorization", API_KEY);
+        transcriptConn.setRequestProperty("Authorization", ASSEMBLYAI_API_KEY);
         transcriptConn.setRequestProperty("Content-Type", "application/json");
         transcriptConn.setRequestProperty("Accept", "application/json");
         transcriptConn.setConnectTimeout(CONNECT_TIMEOUT_MS);
@@ -174,7 +156,7 @@ public class VoiceHandler {
         return getAsString(transcriptJson, "id");
     }
 
-    // ── Poll for transcription result ──────────────────────────────────────
+    // ── Poll for transcription result ────────────────────────────────────────
     private static String pollForResult(String transcriptId) throws Exception {
         String status = "processing";
         String result = null;
@@ -185,7 +167,7 @@ public class VoiceHandler {
             URL pollUrl = new URL("https://api.assemblyai.com/v2/transcript/" + transcriptId);
             HttpURLConnection pollConn = (HttpURLConnection) pollUrl.openConnection();
             pollConn.setRequestMethod("GET");
-            pollConn.setRequestProperty("Authorization", API_KEY);
+            pollConn.setRequestProperty("Authorization", ASSEMBLYAI_API_KEY);
             pollConn.setRequestProperty("Accept", "application/json");
             pollConn.setConnectTimeout(CONNECT_TIMEOUT_MS);
             pollConn.setReadTimeout(READ_TIMEOUT_MS);
@@ -200,8 +182,6 @@ public class VoiceHandler {
                 return null;
             }
 
-            // System.out.println("Status: " + status);
-
             if (status.equals("completed")) {
                 result = getAsString(pollJson, "text");
             } else if (status.equals("error")) {
@@ -211,12 +191,7 @@ public class VoiceHandler {
             }
         }
 
-        if (result == null || result.isEmpty()) {
-            // System.out.println("Nothing recognized.");
-            return null;
-        }
-
-        // System.out.println("Heard: " + result);
+        if (result == null || result.isEmpty()) return null;
         return result;
     }
 
@@ -225,7 +200,6 @@ public class VoiceHandler {
         int byteRate   = sampleRate * channels * bitDepth / 8;
         int blockAlign = channels * bitDepth / 8;
         int dataSize   = pcm.length;
-        // Ensure dataSize is even for 16-bit PCM (pad if necessary)
         int paddedDataSize = dataSize;
         if (bitDepth == 16 && (dataSize % 2) != 0) {
             paddedDataSize = dataSize + 1;
@@ -250,10 +224,9 @@ public class VoiceHandler {
         dos.writeInt(Integer.reverseBytes(paddedDataSize));
         dos.write(pcm);
         if (paddedDataSize > dataSize) {
-            dos.writeByte(0); // padding
+            dos.writeByte(0);
         }
         dos.flush();
-
         return out.toByteArray();
     }
 
@@ -266,9 +239,7 @@ public class VoiceHandler {
         } else {
             is = conn.getErrorStream();
         }
-        if (is == null) {
-            return "";
-        }
+        if (is == null) return "";
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             StringBuilder sb = new StringBuilder();
             String line;
@@ -279,11 +250,9 @@ public class VoiceHandler {
         }
     }
 
-    // ── Parse JSON field (naive but improved) ────────────────────────────────
+    // ── Parse JSON ───────────────────────────────────────────────────────────
     static JsonObject parseJson(String json) {
-        if (json == null || json.isEmpty()) {
-            return null;
-        }
+        if (json == null || json.isEmpty()) return null;
         try {
             return gson.fromJson(json, JsonObject.class);
         } catch (Exception e) {
@@ -293,9 +262,7 @@ public class VoiceHandler {
     }
 
     static String getAsString(JsonObject obj, String memberName) {
-        if (obj == null || !obj.has(memberName) || obj.get(memberName).isJsonNull()) {
-            return null;
-        }
+        if (obj == null || !obj.has(memberName) || obj.get(memberName).isJsonNull()) return null;
         try {
             return obj.get(memberName).getAsString();
         } catch (Exception e) {
@@ -304,8 +271,7 @@ public class VoiceHandler {
     }
 
     // ── Escape a string for safe JSON inclusion ──────────────────────────────
-
-    private static String escapeJson(String s) {
+     private static String escapeJson(String s) {
         if (s == null) return "";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
@@ -327,37 +293,36 @@ public class VoiceHandler {
             }
         }
         return sb.toString();
-
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // TEXT-TO-SPEECH (TTS)
+    // TEXT-TO-SPEECH (TTS) - eidosSpeech (Free, Microsoft Edge TTS)
+    // Endpoint: POST https://eidosspeech.xyz/api/v1/tts
+    // Auth: X-API-Key header (NOT Bearer token)
+    // Returns: MP3 audio directly
     // ═══════════════════════════════════════════════════════════════════════
 
     public static boolean speak(String text) {
-        if (API_KEY == null || API_KEY.isEmpty()) {
-            System.err.println("API key not set.");
+        if (EIDOS_API_KEY == null || EIDOS_API_KEY.isEmpty()) {
+            System.err.println("eidosSpeech API key not set.");
             return false;
         }
-        
         if (text == null || text.trim().isEmpty()) {
             return false;
         }
 
         try {
-            // Step 1: Request TTS from AssemblyAI (returns raw PCM)
-            byte[] pcmBytes = requestTTS(text);
-            if (pcmBytes == null || pcmBytes.length == 0) {
+            // Step 1: Request TTS from eidosSpeech (returns MP3)
+            byte[] mp3Bytes = requestEidosTTS(text);
+            if (mp3Bytes == null || mp3Bytes.length == 0) {
                 System.err.println("TTS returned empty audio.");
                 return false;
             }
 
-            // Step 2: Wrap PCM in a WAV header so Java Sound API can play it
-            // AssemblyAI streaming TTS returns: 16-bit, 16kHz, mono PCM
-            byte[] wavBytes = toWav(pcmBytes, 16000, 1, 16);
+            System.out.println("Received " + mp3Bytes.length + " bytes from eidosSpeech");
 
-            // Step 3: Play using Java's built-in SourceDataLine (no external dependencies)
-            playWav(wavBytes);
+            // Step 2: Save to temp file and play with system player
+            playMp3(mp3Bytes);
             return true;
 
         } catch (Exception e) {
@@ -367,20 +332,23 @@ public class VoiceHandler {
         }
     }
 
-    private static byte[] requestTTS(String text) throws Exception {
-        URL url = new URL("https://api.assemblyai.com/v2/stream");
+    private static byte[] requestEidosTTS(String text) throws Exception {
+        URL url = new URL(EIDOS_ENDPOINT);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Authorization", API_KEY);
+        // CORRECTED: eidosSpeech uses X-API-Key header, NOT Authorization: Bearer
+        conn.setRequestProperty("X-API-Key", EIDOS_API_KEY);
         conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Accept", "audio/mpeg");
         conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
         conn.setReadTimeout(READ_TIMEOUT_MS);
         conn.setDoOutput(true);
 
-        // AssemblyAI streaming TTS request
+        // eidosSpeech request body
         String jsonBody = "{" +
             "\"text\": \"" + escapeJson(text) + "\"," +
-            "\"voice\": \"default\"" +
+            "\"voice\": \"" + EIDOS_VOICE + "\"," +
+            "\"format\": \"mp3\"" +
         "}";
 
         try (OutputStream os = conn.getOutputStream()) {
@@ -388,15 +356,19 @@ public class VoiceHandler {
         }
 
         int status = conn.getResponseCode();
-        InputStream is = (status >= 200 && status < 300) 
-            ? conn.getInputStream() 
-            : conn.getErrorStream();
 
+        // Check for errors first
+        if (status >= 400) {
+            String errorBody = readResponse(conn);
+            throw new IOException("eidosSpeech API error (" + status + "): " + errorBody);
+        }
+
+        InputStream is = conn.getInputStream();
         if (is == null) {
             throw new IOException("No response stream, status: " + status);
         }
 
-        // Read all audio bytes (raw PCM from AssemblyAI)
+        // Read all audio bytes (complete MP3 file from eidosSpeech)
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         int n;
@@ -406,32 +378,75 @@ public class VoiceHandler {
         is.close();
         conn.disconnect();
 
-        return baos.toByteArray();
+        byte[] result = baos.toByteArray();
+        baos.close();
+        return result;
     }
 
     /**
-     * Plays a WAV file (with proper RIFF header) through the default speakers
-     * using Java's built-in javax.sound.sampled API. No external players needed.
+     * Plays MP3 audio bytes through the default speakers using the system player.
      */
-    private static void playWav(byte[] wavBytes) throws Exception {
-        ByteArrayInputStream bais = new ByteArrayInputStream(wavBytes);
-        AudioInputStream ais = AudioSystem.getAudioInputStream(bais);
+    private static void playMp3(byte[] mp3Bytes) throws Exception {
+        File tempFile = File.createTempFile("tts_", ".mp3");
+        tempFile.deleteOnExit();
 
-        AudioFormat format = ais.getFormat();
-        DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
-
-        try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
-            line.open(format);
-            line.start();
-
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = ais.read(buffer)) != -1) {
-                line.write(buffer, 0, bytesRead);
-            }
-
-            line.drain(); // Wait for playback to finish
+        // Ensure file is fully written and flushed before playing
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            fos.write(mp3Bytes);
+            fos.flush();
         }
-        ais.close();
+
+        // Verify file was written correctly
+        if (tempFile.length() != mp3Bytes.length) {
+            throw new IOException("File write incomplete: expected " + mp3Bytes.length +
+                                  " bytes but wrote " + tempFile.length());
+        }
+
+        String os = System.getProperty("os.name").toLowerCase();
+        ProcessBuilder pb;
+
+        if (os.contains("linux")) {
+            String[] players = {"cvlc", "mpv", "ffplay", "mplayer"};
+            String foundPlayer = null;
+            for (String player : players) {
+                if (isCommandAvailable(player)) {
+                    foundPlayer = player;
+                    break;
+                }
+            }
+            if (foundPlayer == null) {
+                throw new IOException("No audio player found. Install vlc, mpv, or ffplay.");
+            }
+            if (foundPlayer.equals("ffplay")) {
+                pb = new ProcessBuilder(foundPlayer, "-nodisp", "-autoexit", tempFile.getAbsolutePath());
+            } else if (foundPlayer.equals("cvlc")) {
+                pb = new ProcessBuilder(foundPlayer, "--play-and-exit", "--quiet", tempFile.getAbsolutePath());
+            } else {
+                pb = new ProcessBuilder(foundPlayer, tempFile.getAbsolutePath());
+            }
+        } else if (os.contains("mac")) {
+            pb = new ProcessBuilder("afplay", tempFile.getAbsolutePath());
+        } else if (os.contains("win")) {
+            pb = new ProcessBuilder("cmd", "/c", "start", tempFile.getAbsolutePath());
+        } else {
+            throw new IOException("Unsupported OS: " + os);
+        }
+
+        pb.inheritIO();
+        Process process = pb.start();
+        process.waitFor();
+
+        // Clean up temp file after playback
+        tempFile.delete();
+    }
+
+    private static boolean isCommandAvailable(String cmd) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("which", cmd);
+            Process p = pb.start();
+            return p.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

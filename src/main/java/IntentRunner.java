@@ -3,6 +3,7 @@ import java.util.List;
 public class IntentRunner {
     private Memory memory = new Memory();
     private Runner runner;
+    private VoiceHandler voiceHandler = new VoiceHandler();
     private IntentParser parser = new IntentParser();
     private Interface userInterface;
     private SafetyCheck safetyCheck = new SafetyCheck();
@@ -95,6 +96,8 @@ public class IntentRunner {
             else if (intent.getIntentType().equals("CHAT: ")) {
                 String chatRespnse = intent.getIntentRsponse();
                 userInterface.sendOutput(chatRespnse);
+                voiceHandler.speak(chatRespnse);
+
             }
 
             // handle code.mysql> alter table Matieres modify VH int check (VH > 0 AND VH <= 50);
