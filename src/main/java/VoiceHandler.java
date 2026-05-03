@@ -1,3 +1,4 @@
+import javazoom.jl.player.Player;  // from jl1.0.1.jar
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import javax.sound.sampled.*;
@@ -321,8 +322,8 @@ public class VoiceHandler {
 
             System.out.println("Received " + mp3Bytes.length + " bytes from eidosSpeech");
 
-            // Step 2: Save to temp file and play with system player
-            playMp3(mp3Bytes);
+            // step 2: save to temps and play using javazoom
+            playMp3Stream(mp3Bytes);
             return true;
 
         } catch (Exception e) {
@@ -348,7 +349,8 @@ public class VoiceHandler {
         String jsonBody = "{" +
             "\"text\": \"" + escapeJson(text) + "\"," +
             "\"voice\": \"" + EIDOS_VOICE + "\"," +
-            "\"format\": \"mp3\"" +
+            "\"format\": \"mp3\"," +
+            "\"stream_format\": \"sse\"" + 
         "}";
 
         try (OutputStream os = conn.getOutputStream()) {
@@ -383,6 +385,15 @@ public class VoiceHandler {
         return result;
     }
 
+    // no player needed
+    private static void playMp3Stream(byte[] mp3Bytes) throws Exception {
+        // Decode and play MP3 directly in Java — no temp file, no external player
+        ByteArrayInputStream bais = new ByteArrayInputStream(mp3Bytes);
+        Player player = new Player(bais);
+        player.play();  // Blocks until audio finishes
+        player.close();
+    }
+
     /**
      * Plays MP3 audio bytes through the default speakers using the system player.
      */
@@ -406,7 +417,7 @@ public class VoiceHandler {
         ProcessBuilder pb;
 
         if (os.contains("linux")) {
-            String[] players = {"cvlc", "mpv", "ffplay", "mplayer"};
+            String[] players = {"ffplay", "mpv","cvlc", "mplayer"};
             String foundPlayer = null;
             for (String player : players) {
                 if (isCommandAvailable(player)) {
