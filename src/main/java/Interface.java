@@ -13,7 +13,7 @@ public class Interface {
             return prompt;
     }
     //this mehtod is used to validate the command before executing it, it will ask the user if they are sure they want to execute the command if it is a harmful command
-    public boolean validateComand(String command){
+    public boolean validateCommand(String command){
         System.out.print("This may be a harmful command, are you sure you want to execute it? (yes/no): ");
         while (true) {
             String response = sc.nextLine();

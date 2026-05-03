@@ -27,7 +27,7 @@ public class VoiceHandler {
      * Records audio from the microphone, uploads to AssemblyAI, and returns
      * the transcribed text. Returns null if no speech was detected or an error occurred.
      */
-    public static String recordAndTranscribe() {
+    public String recordAndTranscribe() {
         if (ASSEMBLYAI_API_KEY == null || ASSEMBLYAI_API_KEY.isEmpty()) {
             System.err.println("AssemblyAI API key not set.");
             return null;
@@ -114,7 +114,7 @@ public class VoiceHandler {
     }
 
     // ── Upload audio to AssemblyAI ───────────────────────────────────────────
-    private static String uploadAudio(byte[] wavBytes) throws Exception {
+    private String uploadAudio(byte[] wavBytes) throws Exception {
         URL uploadUrl = new URL("https://api.assemblyai.com/v2/upload");
         HttpURLConnection uploadConn = (HttpURLConnection) uploadUrl.openConnection();
         uploadConn.setRequestMethod("POST");
@@ -135,7 +135,7 @@ public class VoiceHandler {
     }
 
     // ── Request transcription ────────────────────────────────────────────────
-    private static String requestTranscription(String audioUploadUrl) throws Exception {
+    private String requestTranscription(String audioUploadUrl) throws Exception {
         URL transcriptUrl = new URL("https://api.assemblyai.com/v2/transcript");
         HttpURLConnection transcriptConn = (HttpURLConnection) transcriptUrl.openConnection();
         transcriptConn.setRequestMethod("POST");
@@ -158,7 +158,7 @@ public class VoiceHandler {
     }
 
     // ── Poll for transcription result ────────────────────────────────────────
-    private static String pollForResult(String transcriptId) throws Exception {
+    private String pollForResult(String transcriptId) throws Exception {
         String status = "processing";
         String result = null;
 
@@ -197,7 +197,7 @@ public class VoiceHandler {
     }
 
     // ── Build a proper WAV file from raw PCM bytes ───────────────────────────
-    static byte[] toWav(byte[] pcm, int sampleRate, int channels, int bitDepth) throws Exception {
+    byte[] toWav(byte[] pcm, int sampleRate, int channels, int bitDepth) throws Exception {
         int byteRate   = sampleRate * channels * bitDepth / 8;
         int blockAlign = channels * bitDepth / 8;
         int dataSize   = pcm.length;
@@ -232,7 +232,7 @@ public class VoiceHandler {
     }
 
     // ── Read HTTP response ───────────────────────────────────────────────────
-    static String readResponse(HttpURLConnection conn) throws Exception {
+    String readResponse(HttpURLConnection conn) throws Exception {
         int status = conn.getResponseCode();
         InputStream is;
         if (status >= 200 && status < 300) {
@@ -252,7 +252,7 @@ public class VoiceHandler {
     }
 
     // ── Parse JSON ───────────────────────────────────────────────────────────
-    static JsonObject parseJson(String json) {
+    JsonObject parseJson(String json) {
         if (json == null || json.isEmpty()) return null;
         try {
             return gson.fromJson(json, JsonObject.class);
@@ -272,7 +272,7 @@ public class VoiceHandler {
     }
 
     // ── Escape a string for safe JSON inclusion ──────────────────────────────
-     private static String escapeJson(String s) {
+     private String escapeJson(String s) {
         if (s == null) return "";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
@@ -303,7 +303,7 @@ public class VoiceHandler {
     // Returns: MP3 audio directly
     // ═══════════════════════════════════════════════════════════════════════
 
-    public static boolean speak(String text) {
+    public boolean speak(String text) {
         if (EIDOS_API_KEY == null || EIDOS_API_KEY.isEmpty()) {
             System.err.println("eidosSpeech API key not set.");
             return false;
@@ -333,7 +333,7 @@ public class VoiceHandler {
         }
     }
 
-    private static byte[] requestEidosTTS(String text) throws Exception {
+    private byte[] requestEidosTTS(String text) throws Exception {
         URL url = new URL(EIDOS_ENDPOINT);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -386,7 +386,7 @@ public class VoiceHandler {
     }
 
     // no player needed
-    private static void playMp3Stream(byte[] mp3Bytes) throws Exception {
+    private void playMp3Stream(byte[] mp3Bytes) throws Exception {
         // Decode and play MP3 directly in Java — no temp file, no external player
         ByteArrayInputStream bais = new ByteArrayInputStream(mp3Bytes);
         Player player = new Player(bais);
@@ -397,7 +397,7 @@ public class VoiceHandler {
     /**
      * Plays MP3 audio bytes through the default speakers using the system player.
      */
-    private static void playMp3(byte[] mp3Bytes) throws Exception {
+    private void playMp3(byte[] mp3Bytes) throws Exception {
         File tempFile = File.createTempFile("tts_", ".mp3");
         tempFile.deleteOnExit();
 
@@ -451,7 +451,7 @@ public class VoiceHandler {
         tempFile.delete();
     }
 
-    private static boolean isCommandAvailable(String cmd) {
+    private boolean isCommandAvailable(String cmd) {
         try {
             ProcessBuilder pb = new ProcessBuilder("which", cmd);
             Process p = pb.start();

@@ -26,7 +26,7 @@ public class Memory {
     public void updateShortTermMemory(String message, String response){
 
         try{
-            Files.write(this.pathToShortMemory, ("[-Mehdi: " + message + " -Jarvis said: " + response + "]\n").getBytes(),
+            Files.write(this.pathToShortMemory, ("[- Mehdi: " + message + " - Neuon said: " + response + "]\n").getBytes(),
              StandardOpenOption.APPEND);
         }
         catch(IOException ioe){
@@ -37,7 +37,7 @@ public class Memory {
     public void updateLongTermMemory(String memory){
         pathToLongMemory = Path.of(pathLong);
         try{
-            Files.write(pathToLongMemory, ("\n-"+ memory).getBytes(), StandardOpenOption.APPEND);
+            Files.write(pathToLongMemory, ("\n- "+ memory).getBytes(), StandardOpenOption.APPEND);
         }
         catch(IOException ioe){
             ioe.printStackTrace();

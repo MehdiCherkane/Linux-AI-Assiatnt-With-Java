@@ -44,7 +44,7 @@ public class FXInterface extends Interface {
     }
 
     @Override
-    public boolean validateComand(String command) {
+    public boolean validateCommand(String command) {
         if (Platform.isFxApplicationThread()) {
             return showNeuonDialog(command);
         }
@@ -104,7 +104,7 @@ public class FXInterface extends Interface {
         q.setTextFill(Color.web("#00f2ff"));
         q.setFont(Font.font("Segoe UI", 13));
 
-        // button to clear memory:
+    
         
 
         HBox btns = new HBox(14);
@@ -184,6 +184,7 @@ public class FXInterface extends Interface {
     @Override
     public void startInteractive(String command, Runner runner) {
         this.activeRunner = runner;
+
         Platform.runLater(() -> {
             if (interactiveDialog == null) {
                 interactiveDialog = new Stage();
