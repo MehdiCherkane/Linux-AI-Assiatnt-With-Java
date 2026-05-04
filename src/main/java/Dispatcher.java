@@ -5,6 +5,7 @@ public class Dispatcher {
     private Interface userInterface = new FXInterface()
 
     public Dispatcher() {
+        
         registerHandler("CHAT: ", new ChatHandler());
         registerHandler("SHELL: ", new ShellHandler());
         registerHandler("YOUTUBE: ", new YouTubeHandler());

@@ -3,6 +3,7 @@ public class ExitHandler implements IntentHandler{
 
     @Override 
     public void handle(Intent intent){
+        
         memory.clearShortMemory();
         System.exit(0);
     }

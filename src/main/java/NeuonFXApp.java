@@ -57,6 +57,7 @@ public class NeuonFXApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        
         memory = new Memory();
         voiceHandler = new VoiceHandler();
 

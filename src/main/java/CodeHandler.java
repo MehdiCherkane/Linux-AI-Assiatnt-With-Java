@@ -24,6 +24,7 @@ public class CodeHandler implements IntentHandler{
 
         // Always split on first newline to separate potential file name from code
         if (content.contains("\n")) {
+            
             String[] parts = content.split("\n", 2);
             String potentialFileName = parts[0].trim();
             // Check if it looks like a file name (has extension, no invalid chars)

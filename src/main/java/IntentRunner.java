@@ -1,6 +1,7 @@
 import java.util.List;
 
 public class IntentRunner {
+    
     private Dispatcher dispatcher = new Dispatcher();
     private IntentParser parser = new IntentParser();
     public void run(String response){
