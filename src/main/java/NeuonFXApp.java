@@ -27,7 +27,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class JarvisFXApp extends Application {
+public class NeuonFXApp extends Application {
 
     private Timeline voiceRotateTimeline;
     private Timeline voiceRotateTimeline2;
@@ -49,20 +49,21 @@ public class JarvisFXApp extends Application {
     private boolean isListening;
     private boolean isProcessing;
 
-    private Messanger messanger;
+    private Messanger messanger; 
     private IntentRunner intentRunner;
     private Memory memory;
-    private VoiceHandler voiceHandler = new VoiceHandler();
+    private VoiceHandler voiceHandler;
     private FXInterface fxInterface;
 
     @Override
     public void start(Stage stage) {
         memory = new Memory();
+        voiceHandler = new VoiceHandler();
 
         StackPane mainRoot = buildUI();
 
-        fxInterface = new FXInterface(outputArea);
-        intentRunner = new IntentRunner(fxInterface, new Runner(), new CodeHandler(fxInterface));
+        fxInterface = new FXInterface();
+        intentRunner = new IntentRunner();
         messanger = new Messanger();
 
         Scene scene = new Scene(mainRoot, 1200, 800);
@@ -82,6 +83,7 @@ public class JarvisFXApp extends Application {
     });
         stage.show();
 
+        fxInterface.setOutputArea(outputArea);
         fxInterface.sendOutput("[SYSTEM] Ready Boss");
         startAnimations();
     }

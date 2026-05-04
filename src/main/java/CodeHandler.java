@@ -1,14 +1,22 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-public class CodeHandler {
-    private Interface userInterface;
+public class CodeHandler implements IntentHandler{
+    private Interface userInterface = new FXInterface();
+    private Runner runner = new Runner();
     private String codeDirectory = "/home/mehdi-cherkane/Desktop/AI_CODE/";
 
-    public CodeHandler(Interface userInterface){
-        this.userInterface = userInterface;
-    }
+    @Override 
+    public void handle(Intent intent){
+         String filePath = handleCode(intent.getIntentRsponse());
 
+            if (filePath != null) {
+                ProcessResult result = runner.execute("code \"" + filePath + "\"");
+                userInterface.sendOutput("VS Code launch exit code: " + result.getExitCode());
+                if (!result.getStderr().isBlank()) userInterface.sendOutput("Code launch error: " + result.getStderr());
+            }
+
+    }
     public String handleCode(String content){
 
         String fileName;

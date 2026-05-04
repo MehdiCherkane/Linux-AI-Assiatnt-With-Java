@@ -17,12 +17,13 @@ import javafx.stage.StageStyle;
 import java.util.concurrent.CountDownLatch;
 
 public class FXInterface extends Interface {
-    private final TextArea outputArea;
+
+    private static TextArea outputArea;
     private Stage interactiveDialog;
     private TextField interactiveInput;
     private Runner activeRunner;   // used to send input/kill
-
-    public FXInterface(TextArea outputArea) {
+    
+    public void setOutputArea(TextArea outputArea) {
         this.outputArea = outputArea;
     }
 
@@ -179,7 +180,7 @@ public class FXInterface extends Interface {
         return b;
     }
 
-    // ========== Interactive process support ==========
+    // Interactive process support
     
     @Override
     public void startInteractive(String command, Runner runner) {
