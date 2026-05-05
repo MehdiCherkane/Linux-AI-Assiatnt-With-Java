@@ -9,24 +9,22 @@ import java.nio.charset.StandardCharsets;
 public class VoiceHandler {
 
     // ── AssemblyAI (for Speech-to-Text) ──────────────────────────────────────
-    static final String ASSEMBLYAI_API_KEY = "2676672cf7ac4f308609604a678b1ef5";
+    static final String ASSEMBLYAI_API_KEY = System.getenv("ASSEMBLYAI_API_KEY");
     static final float  SAMPLE_RATE        = 16000f;
     static final double ENERGY_THRESHOLD   = 130000000;
-    static final int    SILENCE_LIMIT_MS   = 900;
+    static final int    SILENCE_LIMIT_MS   = 1500;
     static final int    MAX_RECORD_SECS    = 60;
     static final int    CONNECT_TIMEOUT_MS = 15000;
     static final int    READ_TIMEOUT_MS    = 30000;
     private static final Gson gson = new Gson();
 
     // ── eidosSpeech (for Text-to-Speech) ────────────────────────────────────
-    static final String EIDOS_API_KEY = "esk_VzpOlJwR6lrvPqQkqYDioiLskRD7jQmL";
-    static final String EIDOS_VOICE   = "en-US-AndrewNeural"; // or en-US-AvaNeural
+    static final String EIDOS_API_KEY = System.getenv("EIDOS_API_KEY");
+    static final String EIDOS_VOICE   = "en-US-AndrewNeural"; 
     static final String EIDOS_ENDPOINT = "https://eidosspeech.xyz/api/v1/tts";
 
-    /**
-     * Records audio from the microphone, uploads to AssemblyAI, and returns
-     * the transcribed text. Returns null if no speech was detected or an error occurred.
-     */
+    // Speech-to-text
+
     public String recordAndTranscribe() {
         if (ASSEMBLYAI_API_KEY == null || ASSEMBLYAI_API_KEY.isEmpty()) {
             System.err.println("AssemblyAI API key not set.");
@@ -41,7 +39,6 @@ public class VoiceHandler {
             mic.open(format);
             mic.start();
 
-            System.out.println("Listening... (speak, I'll stop when you go silent)");
 
             byte[] buffer = new byte[4096];
             ByteArrayOutputStream audioData = new ByteArrayOutputStream();
@@ -80,7 +77,6 @@ public class VoiceHandler {
             mic = null;
 
             if (!speechDetected) {
-                System.out.println("No speech detected.");
                 return null;
             }
 
@@ -114,6 +110,7 @@ public class VoiceHandler {
     }
 
     // ── Upload audio to AssemblyAI ───────────────────────────────────────────
+
     private String uploadAudio(byte[] wavBytes) throws Exception {
         URL uploadUrl = new URL("https://api.assemblyai.com/v2/upload");
         HttpURLConnection uploadConn = (HttpURLConnection) uploadUrl.openConnection();
@@ -135,6 +132,7 @@ public class VoiceHandler {
     }
 
     // ── Request transcription ────────────────────────────────────────────────
+
     private String requestTranscription(String audioUploadUrl) throws Exception {
         URL transcriptUrl = new URL("https://api.assemblyai.com/v2/transcript");
         HttpURLConnection transcriptConn = (HttpURLConnection) transcriptUrl.openConnection();
@@ -158,6 +156,7 @@ public class VoiceHandler {
     }
 
     // ── Poll for transcription result ────────────────────────────────────────
+
     private String pollForResult(String transcriptId) throws Exception {
         String status = "processing";
         String result = null;
@@ -197,6 +196,7 @@ public class VoiceHandler {
     }
 
     // ── Build a proper WAV file from raw PCM bytes ───────────────────────────
+
     byte[] toWav(byte[] pcm, int sampleRate, int channels, int bitDepth) throws Exception {
         int byteRate   = sampleRate * channels * bitDepth / 8;
         int blockAlign = channels * bitDepth / 8;
@@ -232,6 +232,7 @@ public class VoiceHandler {
     }
 
     // ── Read HTTP response ───────────────────────────────────────────────────
+
     String readResponse(HttpURLConnection conn) throws Exception {
         int status = conn.getResponseCode();
         InputStream is;
@@ -271,7 +272,8 @@ public class VoiceHandler {
         }
     }
 
-    // ── Escape a string for safe JSON inclusion ──────────────────────────────
+    // ── Escape a string for safe JSON inclusion ──────────────────────────────\
+
      private String escapeJson(String s) {
         if (s == null) return "";
         StringBuilder sb = new StringBuilder();
@@ -296,12 +298,10 @@ public class VoiceHandler {
         return sb.toString();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
     // TEXT-TO-SPEECH (TTS) - eidosSpeech (Free, Microsoft Edge TTS)
     // Endpoint: POST https://eidosspeech.xyz/api/v1/tts
-    // Auth: X-API-Key header (NOT Bearer token)
     // Returns: MP3 audio directly
-    // ═══════════════════════════════════════════════════════════════════════
+
 
     public boolean speak(String text) {
         if (EIDOS_API_KEY == null || EIDOS_API_KEY.isEmpty()) {
@@ -337,7 +337,7 @@ public class VoiceHandler {
         URL url = new URL(EIDOS_ENDPOINT);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
-        // CORRECTED: eidosSpeech uses X-API-Key header, NOT Authorization: Bearer
+        //eidosSpeech uses X-API-Key header, NOT Authorization: Bearer
         conn.setRequestProperty("X-API-Key", EIDOS_API_KEY);
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "audio/mpeg");
@@ -394,9 +394,9 @@ public class VoiceHandler {
         player.close();
     }
 
-    /**
-     * Plays MP3 audio bytes through the default speakers using the system player.
-     */
+    
+     //Plays MP3 audio bytes through the default speakers using the system player.
+     
     private void playMp3(byte[] mp3Bytes) throws Exception {
         File tempFile = File.createTempFile("tts_", ".mp3");
         tempFile.deleteOnExit();

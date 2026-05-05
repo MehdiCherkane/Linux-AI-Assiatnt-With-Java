@@ -2,7 +2,7 @@ import java.util.HashMap;
 
 public class Dispatcher {
     private HashMap<String, IntentHandler> handlers = new HashMap<>();
-    private Interface userInterface = new FXInterface()
+    private Interface userInterface = new FXInterface();
 
     public Dispatcher() {
         
