@@ -7,7 +7,7 @@ public class IntentParser {
 
     // 1. Pattern for Standard Markers: CHAT:, SHELL:, etc.
     // We use a "Lookahead" (?=...) to find the next marker without 'eating' it
-    private static final String MARKER_NAMES = "CHAT:|YOUTUBE:|SHELL:|CONTEXT:|REM:|INVALID:|EXIT:|CODE:"; // Add more markers as needed
+    private static final String MARKER_NAMES = "CHAT:|YOUTUBE:|SHELL:|REM:|INVALID:|EXIT:|CODE:|BRING:";
     private static final String MARKER_REGEX = "(" + MARKER_NAMES + ")(.*?)(?=" + MARKER_NAMES + "|$)";
 
     // Master Pattern now only uses markers

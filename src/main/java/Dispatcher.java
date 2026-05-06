@@ -13,10 +13,11 @@ public class Dispatcher {
         registerHandler("INVALID: ", new InvalidHandler());
         registerHandler("EXIT: ", new ExitHandler());
         registerHandler("CODE: ", new CodeHandler());
+        // BRING handler is registered later once IntentRunner is available.
         
     }
 
-    private void registerHandler(String intentName, IntentHandler handler) {
+    public void registerHandler(String intentName, IntentHandler handler) {
         handlers.put(intentName, handler);
     }
 

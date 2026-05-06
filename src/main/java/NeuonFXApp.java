@@ -50,6 +50,7 @@ public class NeuonFXApp extends Application {
     private boolean isProcessing;
 
     private Messanger messanger; 
+    private Dispatcher dispatcher;
     private IntentRunner intentRunner;
     private Memory memory;
     private VoiceHandler voiceHandler;
@@ -64,7 +65,9 @@ public class NeuonFXApp extends Application {
         StackPane mainRoot = buildUI();
 
         fxInterface = new FXInterface();
-        intentRunner = new IntentRunner();
+        dispatcher = new Dispatcher();
+        intentRunner = new IntentRunner(dispatcher);
+        dispatcher.registerHandler("BRING: ", new BringHandler(intentRunner));
         messanger = new Messanger();
 
         Scene scene = new Scene(mainRoot, 1200, 800);
@@ -319,7 +322,7 @@ public class NeuonFXApp extends Application {
         );
         inputField.setOnAction(e -> sendPrompt());
 
-        // ── EXEC button ──
+        // ── SEND button ──
         sendBtn = new Button("FIRE");
         String btnBase =
             "-fx-background-color: #00f2ff;" +
