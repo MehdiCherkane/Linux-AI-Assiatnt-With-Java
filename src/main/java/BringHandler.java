@@ -19,11 +19,12 @@ public class BringHandler implements IntentHandler{
             userInterface.sendOutput("EXECUTING "+ command);
             ProcessResult result = runner.execute(command);
             userInterface.sendOutput(""" 
-                SENDING:
+                =======SENDING:=================================================
                     Here is the command you requested to see its output: %s
                     The standard output of this command is: %s
                     The standard error of this command is: %s
-                    The exit code of this command is: %d    
+                    The exit code of this command is: %d  
+                ================================================================
                     """.formatted(command,result.getStdout(), result.getStderr(), result.getExitCode()));
 
             String LLMresponse = messanger.getLLMrespnse("""

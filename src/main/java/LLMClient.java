@@ -2,58 +2,67 @@ import java.net.http.*;
 import java.net.URI;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 
 public class LLMClient {
 
     private HttpResponse<String> response;
     private PromptV2 systemPrompt = new PromptV2();
+    private Memory memory = new Memory();
 
-    private static final String API_KEY = System.getenv(
-        "GROQ_API_KEY"
-    );
+    private static final String API_KEY = System.getenv("GROQ_API_KEY");
 
     private static final String URL = "https://api.groq.com/openai/v1/chat/completions";
 
     public String ask(String userPrompt) throws Exception {
+        
 
-        String body = """
-            {
-                "model": "llama-3.1-8b-instant",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "%s"
-                    },
-                    {
-                        "role": "user",
-                        "content": "%s"
-                    }
-                ]
-            }
-
-        """.formatted(systemPrompt.getPrompt().replace("\\", "\\\\") 
-                                              .replace("\"", "\\\"")   
-                                              .replace("\n", "\\n") 
-                    ,userPrompt.replace("\\", "\\\\") 
-                               .replace("\"", "\\\"")   
-                               .replace("\n", "\\n") 
-                );
+        JsonArray messages = new JsonArray();
+        
+        // 1. System message
+        JsonObject systemMsg = new JsonObject();
+        systemMsg.addProperty("role", "system");
+        systemMsg.addProperty("content", systemPrompt.getPrompt());
+        messages.add(systemMsg);
+        
+        // 2. Injecting history.
+        for (String[] pair : memory.loadShortMemory()) {
+            JsonObject userMsg = new JsonObject();
+            userMsg.addProperty("role", "user");
+            userMsg.addProperty("content", pair[0]);
+            messages.add(userMsg);
+            
+            JsonObject assistantMsg = new JsonObject();
+            assistantMsg.addProperty("role", "assistant");
+            assistantMsg.addProperty("content", pair[1]);
+            messages.add(assistantMsg);
+        }
+        
+        // 3. Current user message last
+        JsonObject currentMsg = new JsonObject();
+        currentMsg.addProperty("role", "user");
+        currentMsg.addProperty("content", userPrompt);
+        messages.add(currentMsg);
+        
+        // 4. Build full request body
+        JsonObject body = new JsonObject();
+        body.addProperty("model", "llama-3.1-8b-instant");
+        body.add("messages", messages);
 
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(URL))
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + API_KEY)
-            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
             .build();
-
-            response = HttpClient.newHttpClient()
+        
+        response = HttpClient.newHttpClient()
             .send(request, HttpResponse.BodyHandlers.ofString());
         
-
         return extractCommand(response.body());
     }
 
+    // This method is for debugging.
     public HttpResponse<String> getRawResponse(){
         return response;
     }

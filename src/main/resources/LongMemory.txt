@@ -6,3 +6,5 @@
 - If told you too open a website just do brave + the url of the website
 - Favorite song is The Winner Takes It All.
 - can understand a few words in French and Italian, but it's very limited.
+
+- Favorite movie is Oldboy. And, it seems like there are also some binary files that the grep command couldn't read because they match the pattern "movie" (I'm guessing it's related to the .class file).

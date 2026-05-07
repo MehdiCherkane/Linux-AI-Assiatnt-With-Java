@@ -6,7 +6,7 @@ public class Memory {
     
     private String pathLong = "src/main/resources/LongMemory.txt";
     private int contextWindow = 8; // the number of last interactions to keep in short term memory
-    private static ArrayList<String> shortTermMemory = new ArrayList<>();
+    private static ArrayList<String[]> shortTermMemory = new ArrayList<>();
     private Path pathToLongMemory;
 
 
@@ -17,16 +17,13 @@ public class Memory {
 
     public void updateShortTermMemory(String message, String response){
 
-        if (shortTermMemory.size() > contextWindow) {
+        if (shortTermMemory.size() >= contextWindow) {
             shortTermMemory.remove(0);
         }
-        shortTermMemory.add("{role: user, content: " + message + "}");
-        shortTermMemory.add("{role: assistant, content: " + response + "}");
-
+        shortTermMemory.add(new String[]{message, response});
     }
-    public String loadShortMemory(){
-        System.out.println(String.join(",\n", shortTermMemory));
-        return String.join(",\n", shortTermMemory);
+    public ArrayList<String[]> loadShortMemory(){
+        return shortTermMemory;
     }
 
     public void updateLongTermMemory(String memory){

@@ -44,7 +44,6 @@ public class PromptV2 {
 
         things you know about me, here is your long term memory: [ %s ].
 
-        - Our current conversation, PAY ATTENTION HERE to see the context of our current conversation: [ %s ].
         You don't have to always tell me the things you know about, just if you need something look it up in that list above. and based on the converstion list you shape your next response, like a human-to-huamn talking.
         PAY ATTENTION TO THIS: You MUST always respond with one of the formats I mentioned in the beginning, if you can't handle the request, just respond with INVALID: and then state the reason in CHAT: .
         PAY ATTENTION TO CODE: format whenever I tell to write code or build code or make code.
@@ -54,7 +53,7 @@ public class PromptV2 {
 
     public String getPrompt(){
         String longMemory = memory.loadLongMemory();
-        String shortMemory = memory.loadShortMemory();
-        return systemPrompt.formatted(longMemory, shortMemory);
+
+        return systemPrompt.formatted(longMemory);
     }
 }
