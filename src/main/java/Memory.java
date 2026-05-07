@@ -1,37 +1,32 @@
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ArrayList;
 
 public class Memory {
     
     private String pathLong = "src/main/resources/LongMemory.txt";
-    private String pathShort = "src/main/resources/ShortMemory.txt";
+    private int contextWindow = 8; // the number of last interactions to keep in short term memory
+    private static ArrayList<String> shortTermMemory = new ArrayList<>();
     private Path pathToLongMemory;
-    private Path pathToShortMemory;
+
 
     public Memory() {
         pathToLongMemory = Path.of(pathLong);
-        pathToShortMemory = Path.of(pathShort);
     }
 
-    public void updateShortTermMemory(String memory){
-
-        try{
-            Files.write(this.pathToShortMemory, ("\n"+ memory).getBytes(), StandardOpenOption.APPEND);
-        }
-        catch(IOException ioe){
-            ioe.printStackTrace();
-        }
-    }
 
     public void updateShortTermMemory(String message, String response){
 
-        try{
-            Files.write(this.pathToShortMemory, ("[- Mehdi: " + message + " - Neuon said: " + response + "]\n").getBytes(),
-             StandardOpenOption.APPEND);
+        if (shortTermMemory.size() > contextWindow) {
+            shortTermMemory.remove(0);
         }
-        catch(IOException ioe){
-            ioe.printStackTrace();
-        }
+        shortTermMemory.add("{role: user, content: " + message + "}");
+        shortTermMemory.add("{role: assistant, content: " + response + "}");
+
+    }
+    public String loadShortMemory(){
+        System.out.println(String.join(",\n", shortTermMemory));
+        return String.join(",\n", shortTermMemory);
     }
 
     public void updateLongTermMemory(String memory){
@@ -44,18 +39,7 @@ public class Memory {
         }
 
     }
-    public String loadShortMemory(){
-        if (!Files.exists(pathToShortMemory)) {
-            return "";
-        }
-        try{
-            return Files.readString(pathToShortMemory);
-        }
-        catch(IOException ioe){
-            ioe.printStackTrace();
-            return "";
-        }
-    }
+
     public String loadLongMemory(){
         if (!Files.exists(pathToLongMemory)) {
             return "";
@@ -69,10 +53,6 @@ public class Memory {
         }
     }
     public void clearShortMemory(){
-        try{
-            Files.write(pathToShortMemory, "".getBytes());
-        }
-        catch(IOException ioe){
-        }
+        shortTermMemory.clear();
     }
 }

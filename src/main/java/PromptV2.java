@@ -1,7 +1,7 @@
 public class PromptV2 {
     
     private Memory memory = new Memory();
-    private String promptTemplate = """
+    private String systemPrompt = """
         You are a Linux assistant and a friend.Your name is Neuon. You can only respond with one of these exact formats:
         
         SHELL: <command>        = to run a shell command
@@ -55,6 +55,6 @@ public class PromptV2 {
     public String getPrompt(){
         String longMemory = memory.loadLongMemory();
         String shortMemory = memory.loadShortMemory();
-        return promptTemplate.formatted(longMemory, shortMemory);
+        return systemPrompt.formatted(longMemory, shortMemory);
     }
 }

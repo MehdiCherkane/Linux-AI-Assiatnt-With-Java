@@ -18,7 +18,7 @@ public class BringHandler implements IntentHandler{
         if (safetyCheck.isSafe(command)) {
             userInterface.sendOutput("EXECUTING "+ command);
             ProcessResult result = runner.execute(command);
-            System.out.println(""" 
+            userInterface.sendOutput(""" 
                 SENDING:
                     Here is the command you requested to see its output: %s
                     The standard output of this command is: %s
