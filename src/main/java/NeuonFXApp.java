@@ -26,6 +26,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class NeuonFXApp extends Application {
 
@@ -49,6 +51,10 @@ public class NeuonFXApp extends Application {
     private boolean isListening;
     private boolean isProcessing;
 
+    private HardwareMonitor hardwareMonitor;
+    private ScheduledExecutorService hwScheduler;
+    
+    private TextArea hwMonitor;  
     private Messanger messanger; 
     private Dispatcher dispatcher;
     private IntentRunner intentRunner;
@@ -89,6 +95,8 @@ public class NeuonFXApp extends Application {
 
         fxInterface.setOutputArea(outputArea);
         fxInterface.sendOutput("[SYSTEM] Ready Boss");
+        hardwareMonitor = new HardwareMonitor();
+        startHardwareMonitoring();
         startAnimations();
     }
 
@@ -119,12 +127,7 @@ public class NeuonFXApp extends Application {
         grid.add(topBar, 0, 0, 3, 1);
 
         VBox leftPanel = createPanel("HARDWARE MONITOR");
-        TextArea hwMonitor = new TextArea(
-            "[OK] THREAD_01: NOMINAL\n" +
-            "[OK] THREAD_02: NOMINAL\n" +
-            "[OK] THREAD_03: NOMINAL\n" +
-            "[!]  TEMP: 42°C"
-        );
+        hwMonitor = new TextArea();
         hwMonitor.setEditable(false);
         hwMonitor.setWrapText(true);
         hwMonitor.setStyle(
@@ -565,6 +568,25 @@ public class NeuonFXApp extends Application {
         setListening(false);
     }
 
+    private void startHardwareMonitoring() {
+        hwScheduler = Executors.newSingleThreadScheduledExecutor();
+        hwScheduler.scheduleAtFixedRate(() -> {
+            // Read from /proc (background thread — file I/O is safe here)
+            String cpu  = hardwareMonitor.getCpu();
+            String ram  = hardwareMonitor.getRam();
+            String disk = hardwareMonitor.getDisk();
+            String net  = hardwareMonitor.getNet();
+
+            // Push to UI (JavaFX thread only!)
+            javafx.application.Platform.runLater(() -> {
+                hwMonitor.setText(String.format(
+                    "CPU  : %s\nRAM  : %s\nDISK : %s\nNET  : %s",
+                    cpu, ram, disk, net
+                ));
+            });
+        }, 0, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
     private void sendPrompt() {
         String prompt = inputField.getText().trim();
         if (prompt.isEmpty()) return;
@@ -693,6 +715,7 @@ public class NeuonFXApp extends Application {
     }
 
     private void stopAnimations() {
+        if (hwScheduler != null) hwScheduler.shutdown();
         if (clockTimeline != null) clockTimeline.stop();
         if (ring1Timeline != null) ring1Timeline.stop();
         if (ring2Timeline != null) ring2Timeline.stop();
