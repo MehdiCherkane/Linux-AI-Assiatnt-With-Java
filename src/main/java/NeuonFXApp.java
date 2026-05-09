@@ -51,9 +51,9 @@ public class NeuonFXApp extends Application {
     private boolean isListening;
     private boolean isProcessing;
 
-    private HardwareMonitor hardwareMonitor;
     private ScheduledExecutorService hwScheduler;
     
+    private HardwareMonitor hardwareMonitor;
     private TextArea hwMonitor;  
     private Messanger messanger; 
     private Dispatcher dispatcher;
@@ -71,9 +71,11 @@ public class NeuonFXApp extends Application {
         StackPane mainRoot = buildUI();
 
         fxInterface = new FXInterface();
+        
         dispatcher = new Dispatcher();
         intentRunner = new IntentRunner(dispatcher);
         dispatcher.registerHandler("BRING: ", new BringHandler(intentRunner));
+
         messanger = new Messanger();
 
         Scene scene = new Scene(mainRoot, 1200, 800);
