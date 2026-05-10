@@ -10,6 +10,7 @@ public class ResponseParser {
     private JsonObject rawMessage; // the full assistant message, for history
 
     public ResponseParser parse(String responseBody) {
+        
         JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
         JsonObject choice = root.getAsJsonArray("choices").get(0).getAsJsonObject();
 
