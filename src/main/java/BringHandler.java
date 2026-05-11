@@ -27,7 +27,7 @@ public class BringHandler implements IntentHandler{
                 ================================================================
                     """.formatted(command,result.getStdout(), result.getStderr(), result.getExitCode()));
 
-            String LLMresponse = messanger.getLLMrespnse("""
+            String LLMresponse = messanger.getLLMResponse("""
                     Here is the command you requested to see its output: %s
                     The standard output of this command is: %s
                     The standard error of this command is: %s

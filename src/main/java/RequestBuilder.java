@@ -3,7 +3,7 @@ import com.google.gson.JsonObject;
 
 public class RequestBuilder {
 
-    private static final String MODEL = "llama-3.1-8b-instant";
+    private static final String MODEL = "openai/gpt-oss-120b";
 
     public static JsonObject build(JsonArray messages, JsonArray tools) {
         JsonObject body = new JsonObject();

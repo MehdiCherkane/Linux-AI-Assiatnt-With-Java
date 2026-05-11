@@ -14,41 +14,8 @@ public class LLMClient {
 
     private static final String URL = "https://api.groq.com/openai/v1/chat/completions";
 
-    public String ask(String userPrompt) throws Exception {
+    public String ask(JsonObject body) throws Exception {
         
-
-        JsonArray messages = new JsonArray();
-        
-        // 1. System message
-        JsonObject systemMsg = new JsonObject();
-        systemMsg.addProperty("role", "system");
-        systemMsg.addProperty("content", systemPrompt.getPrompt());
-        messages.add(systemMsg);
-        
-        // 2. Injecting history.
-        for (String[] pair : memory.loadShortMemory()) {
-            JsonObject userMsg = new JsonObject();
-            userMsg.addProperty("role", "user");
-            userMsg.addProperty("content", pair[0]);
-            messages.add(userMsg);
-            
-            JsonObject assistantMsg = new JsonObject();
-            assistantMsg.addProperty("role", "assistant");
-            assistantMsg.addProperty("content", pair[1]);
-            messages.add(assistantMsg);
-        }
-        
-        // 3. Current user message last
-        JsonObject currentMsg = new JsonObject();
-        currentMsg.addProperty("role", "user");
-        currentMsg.addProperty("content", userPrompt);
-        messages.add(currentMsg);
-        
-        // 4. Build full request body
-        JsonObject body = new JsonObject();
-        body.addProperty("model", "llama-3.1-8b-instant");
-        body.add("messages", messages);
-
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(URL))
             .header("Content-Type", "application/json")
@@ -59,7 +26,7 @@ public class LLMClient {
         response = HttpClient.newHttpClient()
             .send(request, HttpResponse.BodyHandlers.ofString());
         
-        return extractCommand(response.body());
+        return response.body();
     }
 
     // This method is for debugging.

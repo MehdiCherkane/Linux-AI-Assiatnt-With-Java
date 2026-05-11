@@ -71,10 +71,6 @@ public class NeuonFXApp extends Application {
         StackPane mainRoot = buildUI();
 
         fxInterface = new FXInterface();
-        
-        dispatcher = new Dispatcher();
-        intentRunner = new IntentRunner(dispatcher);
-        dispatcher.registerHandler("BRING: ", new BringHandler(intentRunner));
 
         messanger = new Messanger();
 
@@ -602,9 +598,10 @@ public class NeuonFXApp extends Application {
             @Override
             protected Void call() {
                 try {
-                    String response = messanger.getLLMrespnse(prompt);
+                    String response = messanger.getLLMResponse(prompt);
                     memory.updateShortTermMemory(prompt, response);
-                    intentRunner.run(response);
+                    fxInterface.sendOutput(response);
+                    voiceHandler.speak(response);
                 } catch (Exception e) {
                     fxInterface.sendOutput("[ERROR] " + e.getMessage());
                     e.printStackTrace();

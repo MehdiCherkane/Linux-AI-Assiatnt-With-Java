@@ -6,7 +6,7 @@ public class ToolDispatcher {
     private HashMap<String, ToolHandler> handlers = new HashMap<>();
 
     public ToolDispatcher(){
-
+        register("run_shell", new ShellTool());
     }
 
     public ToolDispatcher register(String toolName, ToolHandler handler){

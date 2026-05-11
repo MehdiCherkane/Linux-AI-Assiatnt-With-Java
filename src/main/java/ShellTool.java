@@ -1,19 +1,22 @@
-public class ShellHandler implements IntentHandler {
+import com.google.gson.JsonObject;
+
+public class ShellTool implements ToolHandler {
 
         private SafetyCheck safetyCheck = new SafetyCheck();
         private Runner runner = new Runner(); 
         private Interface userInterface = new FXInterface();
 
         @Override
-        public void handle(Intent intent) {
+        public String execute(JsonObject parametrs) {
 
-            String command = intent.getIntentRsponse();
-            if (safetyCheck.isInteractive(command)) interactive(command);
-            else nonInteractive(command);
+            String command = parametrs.get("command").getAsString();
+
+            if (safetyCheck.isInteractive(command)) return interactive(command);
+            else return nonInteractive(command);
             
         }
 
-        private void interactive(String command){
+        private String interactive(String command){
 
             userInterface.startInteractive(command, runner);
                 runner.executeInteractive(command, new ProcessHandler() {
@@ -32,28 +35,29 @@ public class ShellHandler implements IntentHandler {
                         userInterface.endInteractive();
                     }
                 });
+            return "Interactive process launched. Output is being streamed to the user.";
         }
 
-        private void nonInteractive(String command){
+        private String nonInteractive(String command){
             if (safetyCheck.isSafe(command)) {
-
                 userInterface.sendOutput("Command to execute: " + command);
                 ProcessResult result = runner.execute(command);
-                userInterface.sendOutput("Exit code: " + result.getExitCode());
-                if (!result.getStdout().isBlank()) userInterface.sendOutput(result.getStdout());
-                if (!result.getStderr().isBlank()) userInterface.sendOutput("Error output: " + result.getStderr());
+                if (!result.getStdout().isBlank()) return result.getStdout();
+                if (!result.getStderr().isBlank()) return result.getStderr();
+                return "Exit code: " + result.getExitCode();
 
             } else {
+                
                 userInterface.sendOutput("Command to execute: " + command);
                 boolean userConfirmation = userInterface.validateCommand(command);
                 if (userConfirmation) {
                     ProcessResult result = runner.execute(command);
-                    userInterface.sendOutput("Exit code: " + result.getExitCode());
-                    if (!result.getStdout().isBlank()) userInterface.sendOutput(result.getStdout());
-                    if (!result.getStderr().isBlank()) userInterface.sendOutput("Error output: " + result.getStderr());
+                    if (!result.getStdout().isBlank()) return result.getStdout();
+                    if (!result.getStderr().isBlank()) return result.getStderr();
+                    return "Exit code: " + result.getExitCode();
 
                 } else {
-                    userInterface.sendOutput("Command execution cancelled by the user.");
+                   return "Command execution cancelled by the user.";
                 }
             }
         }

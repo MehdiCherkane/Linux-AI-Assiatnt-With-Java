@@ -10,7 +10,7 @@ public class ResponseParser {
     private JsonObject rawMessage; // the full assistant message, for history
 
     public ResponseParser parse(String responseBody) {
-        
+        System.err.println("RAW: " + responseBody);
         JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
         JsonObject choice = root.getAsJsonArray("choices").get(0).getAsJsonObject();
 
@@ -23,7 +23,7 @@ public class ResponseParser {
         }
 
         // Tool call response
-        if (rawMessage.has("tool_calls")) {
+        if (rawMessage.has("tool_calls") && !rawMessage.get("tool_calls").isJsonNull()) {
             this.toolCalls = rawMessage.getAsJsonArray("tool_calls");
         }
 

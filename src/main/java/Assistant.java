@@ -1,3 +1,4 @@
+// Added comment: I like this file! (this comment was added by Neuon itself hhh).
 import java.util.Scanner;
 
 public class Assistant {

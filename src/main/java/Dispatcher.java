@@ -7,7 +7,6 @@ public class Dispatcher {
     public Dispatcher() {
         
         registerHandler("CHAT: ", new ChatHandler());
-        registerHandler("SHELL: ", new ShellHandler());
         registerHandler("YOUTUBE: ", new YouTubeHandler());
         registerHandler("REM: ", new LongMemoryHandler());
         registerHandler("INVALID: ", new InvalidHandler());
