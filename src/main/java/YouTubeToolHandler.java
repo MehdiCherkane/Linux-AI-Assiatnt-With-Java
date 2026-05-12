@@ -1,13 +1,15 @@
-public class YouTubeHandler implements IntentHandler{
+import com.google.gson.JsonObject;
+
+public class YouTubeToolHandler implements ToolHandler{
         private Interface userInterface = new FXInterface();
         private Runner runner = new Runner();
     
         @Override
-        public void handle(Intent intent) {
-            String query = intent.getIntentRsponse();
+        public String execute(JsonObject parameters) {
+            String query = parameters.get("search_query").getAsString();
             String url = "https://www.youtube.com/results?search_query=" 
                     + query.replace(" ", "+");
             ProcessResult result = runner.execute("brave \"" + url + "\"");
-            userInterface.sendOutput("Browser command finished with exit code: " + result.getExitCode());
+            return "Browser command finished with exit code: " + result.getExitCode();
         }
 }

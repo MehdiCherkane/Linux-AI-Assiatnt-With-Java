@@ -56,8 +56,6 @@ public class NeuonFXApp extends Application {
     private HardwareMonitor hardwareMonitor;
     private TextArea hwMonitor;  
     private Messanger messanger; 
-    private Dispatcher dispatcher;
-    private IntentRunner intentRunner;
     private Memory memory;
     private VoiceHandler voiceHandler;
     private FXInterface fxInterface;

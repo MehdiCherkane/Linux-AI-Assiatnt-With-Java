@@ -12,8 +12,12 @@ public class Messanger {
 
         toolRegistry.register(
             new ToolDefinition("run_shell", "Execute a shell command")
-                .addParameter("command", "string", true)
-        );
+                .addParameter("command", "string", true))
+            .register(new ToolDefinition("write_to_file", "write to a file").addParameter("file_path", "string", true)
+                .addParameter("file_content", "string", true))
+            .register(new ToolDefinition("find_on_youtube", "the search query for YouTube").addParameter("search_query", "string", true))
+            .register(new ToolDefinition("update_long_term_memory", "when you recognize something that worths being remembered for long time").addParameter("something_to_remember", "string", true))
+        ;
         toolRunner = new ToolRunner();
     }
 

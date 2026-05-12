@@ -7,6 +7,8 @@ public class ToolDispatcher {
 
     public ToolDispatcher(){
         register("run_shell", new ShellTool());
+        register("write_to_file", new CodeToolHandler());
+        register("update_long_term_memory", new LongMemoryToolHandler());
     }
 
     public ToolDispatcher register(String toolName, ToolHandler handler){
