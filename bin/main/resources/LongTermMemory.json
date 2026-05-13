@@ -1,0 +1,15 @@
+{
+    "user_info": [
+        "- user name is EL MAHDI CHERKANE",
+        "- user age is 18",
+        "- user lives in Morocco"
+    ],
+    "user_prefrences": [
+        "- user prefers short replies if possible",
+        "- Favorite song is The Winner Takes It All."
+    ],
+    "user_goals": [
+        "- user wants to become an engineer",
+        "- user is trying to build a cool AI agent"
+    ]
+}

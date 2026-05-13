@@ -15,9 +15,14 @@ public class Messanger {
                 .addParameter("command", "string", true))
             .register(new ToolDefinition("write_to_file", "write to a file").addParameter("file_path", "string", true)
                 .addParameter("file_content", "string", true))
-            .register(new ToolDefinition("find_on_youtube", "the search query for YouTube").addParameter("search_query", "string", true))
-            .register(new ToolDefinition("update_long_term_memory", "when you recognize something that worths being remembered for long time").addParameter("something_to_remember", "string", true))
-        ;
+            .register(new ToolDefinition("find_on_youtube", "the search query for YouTube")
+                .addParameter("search_query", "string", true))
+            .register(new ToolDefinition("update_long_term_memory", "when you recognize something that worths being remembered for long time")
+                .addParameter("memory_category", "string", true)
+                .addParameter("something_to_remeber", "string", true))
+            .register(new ToolDefinition("exit_Neuon", "when you understand that I told to exit or end session...")
+                .addParameter("exit_messege", "string", false))
+            .register(new ToolDefinition("request_memories", "when you need some information/memory").addParameter("requested_memories", "string", true));
         toolRunner = new ToolRunner();
     }
 

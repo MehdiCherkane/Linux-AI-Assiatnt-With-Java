@@ -7,7 +7,7 @@ public class ExitToolHandler implements ToolHandler{
     public String execute(JsonObject parameters){
         memory.clearShortMemory();
         System.exit(0);
-        return "Exiting Neuon...";
+        return null;
     }
 
 }

@@ -21,7 +21,11 @@ public class PromptV2 {
         - Never make up command output. If you need to know something about
         the system, use a tool to find out.
 
-        things you know about the user (long term memory): [ %s ]
+        Here the momories you can request:
+         - user_info: when you need some information about the user.
+         - user_prefrences: when you need to know what the user prefrences.
+         - user_goals: when you want to know user goaols and what user wants to in the futue.
+        USE THIS MEMORY REQUESTS IN THE request_memory tool. like: 'requested_memories: user_info'
 
         Use that memory naturally when relevant — don't recite it,
         just let it inform how you talk and what you suggest.
@@ -33,6 +37,6 @@ public class PromptV2 {
 
     public String getPrompt(){
         String longMemory = memory.loadLongMemory();
-        return systemPrompt.formatted(longMemory);
+        return systemPrompt;
     }
 }

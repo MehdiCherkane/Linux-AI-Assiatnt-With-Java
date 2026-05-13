@@ -4,51 +4,23 @@ import java.util.ArrayList;
 
 public class Memory {
     
-    private String pathLong = "src/main/resources/LongMemory.txt";
     private int contextWindow = 8; // the number of last interactions to keep in short term memory
     private static ArrayList<String[]> shortTermMemory = new ArrayList<>();
-    private Path pathToLongMemory;
 
-
-    public Memory() {
-        pathToLongMemory = Path.of(pathLong);
-    }
-
-
+    // add new pair of (userPrompt, LLMresponse) with respect to context window.
     public void updateShortTermMemory(String message, String response){
-
         if (shortTermMemory.size() >= contextWindow) {
             shortTermMemory.remove(0);
         }
         shortTermMemory.add(new String[]{message, response});
     }
+
+    // get short memory (it will be sent to the LLM)
     public ArrayList<String[]> loadShortMemory(){
         return shortTermMemory;
     }
 
-    public void updateLongTermMemory(String memory){
-        pathToLongMemory = Path.of(pathLong);
-        try{
-            Files.write(pathToLongMemory, ("\n- "+ memory).getBytes(), StandardOpenOption.APPEND);
-        }
-        catch(IOException ioe){
-            ioe.printStackTrace();
-        }
-
-    }
-
-    public String loadLongMemory(){
-        if (!Files.exists(pathToLongMemory)) {
-            return "";
-        }
-        try{
-            return Files.readString(pathToLongMemory);
-        }
-        catch(IOException ioe){
-            ioe.printStackTrace();
-            return "";
-        }
-    }
+    // clearing our memory intetionally (even if don't close program)
     public void clearShortMemory(){
         shortTermMemory.clear();
     }
