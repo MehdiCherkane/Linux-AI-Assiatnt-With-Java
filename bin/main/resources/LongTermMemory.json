@@ -1,15 +1,27 @@
 {
-    "user_info": [
-        "- user name is EL MAHDI CHERKANE",
-        "- user age is 18",
-        "- user lives in Morocco"
-    ],
-    "user_prefrences": [
-        "- user prefers short replies if possible",
-        "- Favorite song is The Winner Takes It All."
-    ],
-    "user_goals": [
-        "- user wants to become an engineer",
-        "- user is trying to build a cool AI agent"
-    ]
+  "_categories_index": {
+    "user_info": "Who the user is — name, background, occupation, life context",
+    "user_preferences": "How the user likes to communicate, work, and interact",
+    "user_goals": "What the user is trying to achieve short and long term",
+    "agent_directives": "How the agent should behave, persistent instructions",
+    "knowledge_base": "Domain knowledge and facts the agent has learned about the user's world"
+  },
+  "user_info": [
+    "- user name is EL Mahdi Cherkane",
+    "- user age is 18",
+    "- User studies in EST Beni Mellal",
+    "- User is a CS major"
+  ],
+  "user_prefrences": [
+    "- user prefers concise replies",
+    "- User's favorite song is 'The Winner Takes It All'"
+  ],
+  "user_goals": [
+    "- user dreams of becoming an engineer",
+    "- user is building an AI agent with java",
+    "- User's goal for summer is to finish building Neuon and make it very smart.",
+    "- Summer goal: learn neuroscience"
+  ],
+  "knowledge_base": [],
+  "agent_directives": []
 }

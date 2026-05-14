@@ -1,7 +1,7 @@
 public class PromptV2 {
     
     private Memory memory = new Memory();
-   private String systemPrompt = """
+    private String systemPrompt = """
         Your name is Neuon, a Linux assistant and a personal friend.
         You are running on the user's Ubuntu machine and have access to tools
         that let you interact with it directly.
@@ -22,9 +22,9 @@ public class PromptV2 {
         the system, use a tool to find out.
 
         Here the momories you can request:
-         - user_info: when you need some information about the user.
-         - user_prefrences: when you need to know what the user prefrences.
-         - user_goals: when you want to know user goaols and what user wants to in the futue.
+
+        %s
+
         USE THIS MEMORY REQUESTS IN THE request_memory tool. like: 'requested_memories: user_info'
 
         Use that memory naturally when relevant — don't recite it,
@@ -36,7 +36,6 @@ public class PromptV2 {
     """;
 
     public String getPrompt(){
-        String longMemory = memory.loadLongMemory();
-        return systemPrompt;
+        return systemPrompt.formatted(memory.getMemoriesCategories());
     }
 }

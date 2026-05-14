@@ -1,3 +1,5 @@
+// This class is not used! It's ledagcy from the old system.
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -10,7 +12,7 @@ public class IntentParser {
     private static final String MARKER_NAMES = "CHAT:|YOUTUBE:|SHELL:|REM:|INVALID:|EXIT:|CODE:|BRING:";
     private static final String MARKER_REGEX = "(" + MARKER_NAMES + ")(.*?)(?=" + MARKER_NAMES + "|$)";
 
-    // Master Pattern now only uses markers
+    
     private static final Pattern MASTER_PATTERN = Pattern.compile(MARKER_REGEX, Pattern.DOTALL);
 
     public List<Intent> parseIntents(String response) {
