@@ -22,6 +22,10 @@
     "- User's goal for summer is to finish building Neuon and make it very smart.",
     "- Summer goal: learn neuroscience"
   ],
-  "knowledge_base": [],
-  "agent_directives": []
+  "knowledge_base": [
+
+  ],
+  "agent_directives": [
+    
+  ]
 }

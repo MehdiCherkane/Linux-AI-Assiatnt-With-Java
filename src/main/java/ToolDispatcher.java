@@ -7,10 +7,11 @@ public class ToolDispatcher {
 
     public ToolDispatcher(){
         register("run_shell", new ShellTool());
-        register("write_to_file", new CodeToolHandler());
+        register("write_code", new CodeToolHandler());
         register("update_long_term_memory", new LongMemoryToolHandler());
         register("exit_Neuon", new ExitToolHandler());
         register("request_memories", new RequestMemoryToolHandler());
+        register("read_file", new ReadFileToolHandler());
     }
 
     public ToolDispatcher register(String toolName, ToolHandler handler){

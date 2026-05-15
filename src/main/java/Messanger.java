@@ -13,7 +13,7 @@ public class Messanger {
         toolRegistry.register(
             new ToolDefinition("run_shell", "Execute a shell command")
                 .addParameter("command", "string", true))
-            .register(new ToolDefinition("write_to_file", "write to a file").addParameter("file_path", "string", true)
+            .register(new ToolDefinition("write_code", "for writing code").addParameter("file_name", "string", true)
                 .addParameter("file_content", "string", true))
             .register(new ToolDefinition("find_on_youtube", "the search query for YouTube")
                 .addParameter("search_query", "string", true))
@@ -22,7 +22,9 @@ public class Messanger {
                 .addParameter("something_to_remeber", "string", true))
             .register(new ToolDefinition("exit_Neuon", "when you understand that I told to exit or end session...")
                 .addParameter("exit_messege", "string", false))
-            .register(new ToolDefinition("request_memories", "when you need some information/memory").addParameter("requested_memories", "string", true));
+            .register(new ToolDefinition("request_memories", "when you need some information/memory").addParameter("requested_memories", "string", true))
+            .register(new ToolDefinition("read_file", "when you need to read the content of a file")
+                .addParameter("file_path", "string", true));
         toolRunner = new ToolRunner();
     }
 

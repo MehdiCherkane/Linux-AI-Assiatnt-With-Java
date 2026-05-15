@@ -11,13 +11,15 @@ public class CodeToolHandler implements ToolHandler{
     @Override 
     public String execute(JsonObject parameters){
 
-        String filePath = parameters.get("file_path").getAsString();
+        String fileName = parameters.get("file_name").getAsString();
         String fileContent = parameters.get("file_content").getAsString();
+        String filePath = codeDirectory + fileName;
         // Write to file
         try {
             Files.write(Path.of(filePath), fileContent.getBytes());
-            userInterface.sendOutput("Code written to file: " + filePath);
-            return "Content written sucessfully to" + filePath;
+            userInterface.sendOutput("Code written to file: " + fileName);
+            runner.execute("code " + filePath);
+            return "Content written sucessfully to" + fileName;
 
         } catch (IOException e) {
             return e.getMessage();

@@ -25,7 +25,8 @@ public class PromptV2 {
 
         %s
 
-        USE THIS MEMORY REQUESTS IN THE request_memory tool. like: 'requested_memories: user_info'
+        - USE THIS MEMORY REQUESTS IN THE request_memory tool. like: 'requested_memories: user_info'.
+        - YOU ONLY GOT THE RIGHT TO ADD MORE CATEGORIES OF MEMORY IF THE USER APPROVES IT.
 
         Use that memory naturally when relevant — don't recite it,
         just let it inform how you talk and what you suggest.

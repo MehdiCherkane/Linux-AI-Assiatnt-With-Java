@@ -11,8 +11,8 @@ public class VoiceHandler {
     // ── AssemblyAI (for Speech-to-Text) ──────────────────────────────────────
     static final String ASSEMBLYAI_API_KEY = System.getenv("ASSEMBLYAI_API_KEY");
     static final float  SAMPLE_RATE        = 16000f;
-    static final double ENERGY_THRESHOLD   = 130000000;
-    static final int    SILENCE_LIMIT_MS   = 1000;
+    static final double ENERGY_THRESHOLD   = 100000000;
+    static final int    SILENCE_LIMIT_MS   = 2000;
     static final int    MAX_RECORD_SECS    = 60;
     static final int    CONNECT_TIMEOUT_MS = 15000;
     static final int    READ_TIMEOUT_MS    = 30000;

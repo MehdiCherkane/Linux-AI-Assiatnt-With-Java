@@ -145,7 +145,7 @@ public class NeuonFXApp extends Application {
         outputArea.setWrapText(true);
         outputArea.setStyle(
             "-fx-control-inner-background: black;" +
-            "-fx-text-fill: #00f2ff;" +
+            "-fx-text-fill: #39ced3;" +
             "-fx-font-family: 'Consolas', monospace;" +
             "-fx-font-size: 11px;"
         );
