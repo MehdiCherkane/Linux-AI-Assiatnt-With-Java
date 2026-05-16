@@ -1,0 +1,55 @@
+import java.util.ArrayList;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+public class ToolOptimzerModel {
+
+    private final String MODEL = "llama-3.1-8b-instant";
+    private ToolDispatcher toolDispatcher = new ToolDispatcher();
+    private LLMClient optimizer = new LLMClient();
+    private ArrayList<String> allToolsNames = toolDispatcher.getAllToolsNames();
+    private OptimzerPrompt sysPrompt = new OptimzerPrompt();
+    private Memory memory = new Memory();
+
+
+    // I'm gonna use a small LLM to decide the needed tools.
+    public ArrayList<String> getNeededTools(String userPrompt) {
+        MessageBuilder msg = new MessageBuilder()
+                .addSystem(sysPrompt.getSystemPrompt());
+
+        for (String[] pair : memory.loadShortMemory()) {
+            msg.addUser(pair[0]);
+            msg.addAssistant(pair[1]);
+        }
+
+        msg.addUser(userPrompt);
+
+        JsonObject fullMessage = RequestBuilder.build(msg.build(), null, MODEL);
+        
+        ResponseParser response;
+        try{
+            response = new ResponseParser().parse(optimizer.ask(fullMessage));
+        }
+        catch(Exception e){
+            return null;
+        }
+
+        // the model's JSON response is in getText()
+        JsonObject parsed = JsonParser.parseString(response.getText()).getAsJsonObject();
+        JsonArray toolsArray = parsed.getAsJsonArray("tools");
+
+        ArrayList<String> neededTools = new ArrayList<>();
+        for (JsonElement el : toolsArray) {
+            String toolName = el.getAsString();
+            if (allToolsNames.contains(toolName)) {
+                neededTools.add(toolName);
+            }
+        }
+
+        return neededTools;
+    }
+   
+}

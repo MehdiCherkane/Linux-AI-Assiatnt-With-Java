@@ -1,8 +1,6 @@
 import java.net.http.*;
 import java.net.URI;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonArray;
 
 public class LLMClient {
 
@@ -34,29 +32,4 @@ public class LLMClient {
         return response;
     }
     
-   private String extractCommand(String json) {
-    try {
-        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-        
-        // 1. Get the "choices" array
-        if (jsonObject.has("choices")) {
-            // choices is a list [], so we get the first item [0]
-            JsonObject firstChoice = jsonObject.getAsJsonArray("choices").get(0).getAsJsonObject();
-            
-            // 2. Get the "message" object inside that choice
-            JsonObject message = firstChoice.getAsJsonObject("message");
-            
-            // 3. Finally, get the "content" string
-            if (message.has("content")) {
-                return message.get("content").getAsString();
-            }
-        }
-    } catch (Exception e) {
-        System.err.println("Error digging into JSON: " + e.getMessage());
-        // If the API returned an error, it might be in a different field
-        System.err.println("Raw body was: " + json);
-    }
-    
-    return "";
-    }
 }

@@ -56,7 +56,7 @@ public class Messanger {
         while (steps++ < maxSteps) {
             userInterface.sendOutput("loop run %d times".formatted(steps));
 
-            JsonObject body = RequestBuilder.build(messageBuilder.build(), tools);
+            JsonObject body = RequestBuilder.build(messageBuilder.build(), tools, "openai/gpt-oss-120b");
             String raw = client.ask(body);
             ResponseParser parser = new ResponseParser().parse(raw);
 

@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.google.gson.JsonObject;
@@ -25,5 +26,9 @@ public class ToolDispatcher {
             return hanler.execute(parameters);
         }
         return "Error: this tool '" + toolName + "' is unkown"; 
+    }
+
+    public ArrayList<String> getAllToolsNames(){
+        return new ArrayList<>(handlers.keySet());
     }
 }
