@@ -28,6 +28,7 @@ public class ToolWareHouse {
             "Provide the complete file content. Do NOT use run_shell to write files.")
             .addParameter("file_name", "string", true)
             .addParameter("file_content", "string", true));
+            
         // 3. find_on_youtube
         registerTool("find_on_youtube", new ToolDefinition("find_on_youtube",
             "Search YouTube for a video. Use this when the user wants to watch, find, or listen to " +
@@ -55,8 +56,7 @@ public class ToolWareHouse {
         registerTool("request_memories", new ToolDefinition("request_memories",
             "Retrieve previously saved information from long-term memory. " +
             "Use this at the start of a conversation or when the user references something personal " +
-            "that you might have stored before (e.g. their name, preferences, past context). " +
-            "Describe what kind of memory you are looking for.")
+            "that you might have stored before (e.g. their name, preferences, past context). ")
             .addParameter("requested_memories", "string", true));
 
         // 7. read_file
@@ -83,6 +83,14 @@ public class ToolWareHouse {
 
     private void registerTool(String toolName, ToolDefinition tool){
         allTools.put(toolName, tool);
+    }
+
+    public ToolRegistry getAllTools(){
+        ToolRegistry toolRegistry = new ToolRegistry();
+        for (ToolDefinition tool : allTools.values()) {
+            toolRegistry.register(tool);
+        }
+        return toolRegistry;
     }
     
 }

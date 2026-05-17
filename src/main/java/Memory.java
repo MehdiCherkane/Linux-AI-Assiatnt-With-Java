@@ -36,9 +36,25 @@ public class Memory {
     }
 
     public String getMemoriesCategories(){
+
         try (FileReader reader = new FileReader(pathToLongMemeory)) {
+
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            return root.get("_categories_index").getAsString(); 
+            JsonObject categories = root.getAsJsonObject("_categories_index");
+            StringBuilder sb = new StringBuilder();
+            for (String key : categories.keySet()) {
+                String desc = "";
+                JsonElement el = categories.get(key);
+                if (el != null && !el.isJsonNull()) {
+                    try {
+                        desc = el.getAsString();
+                    } catch (UnsupportedOperationException ex) {
+                        desc = el.toString();
+                    }
+                }
+                sb.append("- ").append(key).append(": ").append(desc).append("\n");
+            }
+            return sb.toString();
         } 
         catch (Exception e) {
             e.printStackTrace();
@@ -87,7 +103,17 @@ public class Memory {
 
         try (FileReader reader = new FileReader(pathToLongMemeory)) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            JsonArray array = root.getAsJsonArray(categoryName);
+            if (!root.has(categoryName)) {
+                return "Category '" + categoryName + "' not found in memory.";
+            }
+            JsonElement categoryEl = root.get(categoryName);
+            if (categoryEl == null || categoryEl.isJsonNull()) {
+                return "Category '" + categoryName + "' is null.";
+            }
+            if (!categoryEl.isJsonArray()) {
+                return "Category '" + categoryName + "' is not an array.";
+            }
+            JsonArray array = categoryEl.getAsJsonArray();
             for (JsonElement element : array) {
                 requestedMemories.append(element);
                 requestedMemories.append("\n");
@@ -97,7 +123,7 @@ public class Memory {
         } 
         catch (Exception e) {
             e.printStackTrace();
-            return "Some error happend while retreiving memory for!!";
+            return "Error retrieving memory: " + e.getMessage();
         }
     }
 }

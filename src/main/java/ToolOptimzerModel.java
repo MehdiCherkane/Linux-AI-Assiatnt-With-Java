@@ -17,6 +17,7 @@ public class ToolOptimzerModel {
 
     // I'm gonna use a small LLM to decide the needed tools.
     public ArrayList<String> getNeededTools(String userPrompt) {
+        
         MessageBuilder msg = new MessageBuilder()
                 .addSystem(sysPrompt.getSystemPrompt());
 
@@ -38,15 +39,26 @@ public class ToolOptimzerModel {
         }
 
         // the model's JSON response is in getText()
-        JsonObject parsed = JsonParser.parseString(response.getText()).getAsJsonObject();
-        JsonArray toolsArray = parsed.getAsJsonArray("tools");
-
         ArrayList<String> neededTools = new ArrayList<>();
-        for (JsonElement el : toolsArray) {
-            String toolName = el.getAsString();
-            if (allToolsNames.contains(toolName)) {
-                neededTools.add(toolName);
+        try {
+            JsonObject parsed = JsonParser.parseString(response.getText()).getAsJsonObject();
+            JsonArray toolsArray = parsed.getAsJsonArray("tools");
+            if (toolsArray == null) return neededTools;
+
+            for (JsonElement el : toolsArray) {
+                if (el == null || el.isJsonNull()) continue;
+                try {
+                    String toolName = el.getAsString();
+                    if (allToolsNames.contains(toolName)) {
+                        neededTools.add(toolName);
+                    }
+                } catch (UnsupportedOperationException e) {
+                    // Element is not a string, skip it
+                    continue;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return neededTools;

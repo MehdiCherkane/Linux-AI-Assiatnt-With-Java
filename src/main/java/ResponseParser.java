@@ -1,5 +1,6 @@
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 public class ResponseParser {
@@ -11,20 +12,49 @@ public class ResponseParser {
 
     public ResponseParser parse(String responseBody) {
         System.err.println("RAW: " + responseBody);
-        JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
-        JsonObject choice = root.getAsJsonArray("choices").get(0).getAsJsonObject();
+        try {
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            JsonArray choicesArray = root.getAsJsonArray("choices");
+            if (choicesArray == null || choicesArray.size() == 0) {
+                this.stopReason = "error";
+                this.textContent = "[ERROR] No choices in response";
+                return this;
+            }
+            JsonObject choice = choicesArray.get(0).getAsJsonObject();
 
-        this.stopReason = choice.get("finish_reason").getAsString();
-        this.rawMessage = choice.getAsJsonObject("message");
+            JsonElement finishReasonEl = choice.get("finish_reason");
+            if (finishReasonEl != null && !finishReasonEl.isJsonNull()) {
+                try {
+                    this.stopReason = finishReasonEl.getAsString();
+                } catch (UnsupportedOperationException e) {
+                    this.stopReason = finishReasonEl.toString();
+                }
+            }
 
-        // Text response
-        if (rawMessage.has("content") && !rawMessage.get("content").isJsonNull()) {
-            this.textContent = rawMessage.get("content").getAsString();
-        }
+            this.rawMessage = choice.getAsJsonObject("message");
+            if (this.rawMessage == null) {
+                this.textContent = "[ERROR] No message in choice";
+                return this;
+            }
 
-        // Tool call response
-        if (rawMessage.has("tool_calls") && !rawMessage.get("tool_calls").isJsonNull()) {
-            this.toolCalls = rawMessage.getAsJsonArray("tool_calls");
+            // Text response
+            if (rawMessage.has("content") && !rawMessage.get("content").isJsonNull()) {
+                JsonElement contentEl = rawMessage.get("content");
+                try {
+                    this.textContent = contentEl.getAsString();
+                } catch (UnsupportedOperationException e) {
+                    this.textContent = contentEl.toString();
+                }
+            }
+
+            // Tool call response
+            if (rawMessage.has("tool_calls") && !rawMessage.get("tool_calls").isJsonNull()) {
+                this.toolCalls = rawMessage.getAsJsonArray("tool_calls");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.stopReason = "error";
+            this.textContent = "[ERROR] Parse error: " + e.getMessage();
         }
 
         return this;
@@ -44,15 +74,37 @@ public class ResponseParser {
     
     // Helper: extract name and arguments from a single tool call
     public static String getToolName(JsonObject toolCall) {
-        return toolCall.getAsJsonObject("function").get("name").getAsString();
+        try {
+            JsonObject function = toolCall.getAsJsonObject("function");
+            if (function == null) return "";
+            JsonElement nameEl = function.get("name");
+            if (nameEl == null || nameEl.isJsonNull()) return "";
+            return nameEl.getAsString();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public static JsonObject getToolArgs(JsonObject toolCall) {
-        String argsString = toolCall.getAsJsonObject("function").get("arguments").getAsString();
-        return JsonParser.parseString(argsString).getAsJsonObject(); // args come as a string, parse it
+        try {
+            JsonObject function = toolCall.getAsJsonObject("function");
+            if (function == null) return new JsonObject();
+            JsonElement argsEl = function.get("arguments");
+            if (argsEl == null || argsEl.isJsonNull()) return new JsonObject();
+            String argsString = argsEl.getAsString();
+            return JsonParser.parseString(argsString).getAsJsonObject(); // args come as a string, parse it
+        } catch (Exception e) {
+            return new JsonObject();
+        }
     }
 
     public static String getToolCallId(JsonObject toolCall) {
-        return toolCall.get("id").getAsString();
+        try {
+            JsonElement idEl = toolCall.get("id");
+            if (idEl == null || idEl.isJsonNull()) return "";
+            return idEl.getAsString();
+        } catch (Exception e) {
+            return "";
+        }
     }
 }

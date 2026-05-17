@@ -1,10 +1,20 @@
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 public class RequestMemoryToolHandler implements ToolHandler {
     private Memory memory = new Memory();
     @Override
     public String execute(JsonObject parameters){
-        String requestedMemories = parameters.get("requested_memories").getAsString();
-        return memory.requestMemories(requestedMemories); 
+        try {
+            JsonElement memoriesEl = parameters.get("requested_memories");
+            if (memoriesEl == null || memoriesEl.isJsonNull()) {
+                return "[ERROR] Missing 'requested_memories' parameter";
+            }
+            String requestedMemories = memoriesEl.getAsString();
+            return memory.requestMemories(requestedMemories);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "[ERROR] " + e.getMessage();
+        }
     }
     
 }

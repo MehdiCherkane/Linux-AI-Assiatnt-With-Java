@@ -1,7 +1,6 @@
 import com.google.gson.*;
 public class Messanger {
 
-    private ToolRegistry toolRegistry = new ToolRegistry();
     private LLMClient client = new LLMClient();
     private Memory memory = new Memory();
     private PromptV2 sysPrompt = new PromptV2();
@@ -10,7 +9,6 @@ public class Messanger {
     private ToolRunner toolRunner;
 
     public Messanger() {
-            
         toolRunner = new ToolRunner();
     }
 
@@ -25,7 +23,11 @@ public class Messanger {
     private String runConversation(String userPrompt) throws Exception {
         
         MessageBuilder messageBuilder = new MessageBuilder(); // fresh every call
-        JsonArray tools = toolWareHouse.getNeededTools(userPrompt).toJson();
+
+        // optimization in case of many tools, now we don't have much
+        /* JsonArray tools = toolWareHouse.getNeededTools(userPrompt).toJson(); */
+
+        JsonArray tools = toolWareHouse.getAllTools().toJson();
 
         // I add system prompt
         messageBuilder.addSystem(sysPrompt.getPrompt());
