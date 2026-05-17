@@ -6,25 +6,11 @@ public class Messanger {
     private Memory memory = new Memory();
     private PromptV2 sysPrompt = new PromptV2();
     private FXInterface userInterface = new FXInterface();
+    private ToolWareHouse toolWareHouse = new ToolWareHouse();
     private ToolRunner toolRunner;
 
     public Messanger() {
-
-        toolRegistry.register(
-            new ToolDefinition("run_shell", "Execute a shell command")
-                .addParameter("command", "string", true))
-            .register(new ToolDefinition("write_code", "for writing code").addParameter("file_name", "string", true)
-                .addParameter("file_content", "string", true))
-            .register(new ToolDefinition("find_on_youtube", "the search query for YouTube")
-                .addParameter("search_query", "string", true))
-            .register(new ToolDefinition("update_long_term_memory", "when you recognize something that worths being remembered for long time")
-                .addParameter("memory_category", "string", true)
-                .addParameter("something_to_remeber", "string", true))
-            .register(new ToolDefinition("exit_Neuon", "when you understand that I told to exit or end session...")
-                .addParameter("exit_messege", "string", false))
-            .register(new ToolDefinition("request_memories", "when you need some information/memory").addParameter("requested_memories", "string", true))
-            .register(new ToolDefinition("read_file", "when you need to read the content of a file")
-                .addParameter("file_path", "string", true));
+            
         toolRunner = new ToolRunner();
     }
 
@@ -37,17 +23,20 @@ public class Messanger {
     }
 
     private String runConversation(String userPrompt) throws Exception {
-
+        
         MessageBuilder messageBuilder = new MessageBuilder(); // fresh every call
-        JsonArray tools = toolRegistry.toJson();
+        JsonArray tools = toolWareHouse.getNeededTools(userPrompt).toJson();
 
+        // I add system prompt
         messageBuilder.addSystem(sysPrompt.getPrompt());
 
+        // Past converation histoty
         for (String[] pair : memory.loadShortMemory()) {
             messageBuilder.addUser(pair[0]);
             messageBuilder.addAssistant(pair[1]);
         }
 
+        // current user message
         messageBuilder.addUser(userPrompt);
 
         int maxSteps = 10;

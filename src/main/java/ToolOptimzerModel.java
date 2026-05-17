@@ -7,7 +7,7 @@ import com.google.gson.JsonParser;
 
 public class ToolOptimzerModel {
 
-    private final String MODEL = "llama-3.1-8b-instant";
+    private final String MODEL = "openai/gpt-oss-120b";
     private ToolDispatcher toolDispatcher = new ToolDispatcher();
     private LLMClient optimizer = new LLMClient();
     private ArrayList<String> allToolsNames = toolDispatcher.getAllToolsNames();
@@ -51,5 +51,11 @@ public class ToolOptimzerModel {
 
         return neededTools;
     }
-   
+    public static void main(String[] args) {
+        ToolOptimzerModel t = new ToolOptimzerModel();
+        ArrayList<String> needed = t.getNeededTools("Tell my name, then make me a python program that prints it 60 times");
+        for (String tool : needed) {
+            System.out.println(tool);
+        }
+    }
 }
